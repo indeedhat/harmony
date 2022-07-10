@@ -4,14 +4,18 @@ import (
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
+	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/net/controllers/socket"
+	"github.com/indeedhat/harmony/internal/net/controllers/ui"
 	"github.com/indeedhat/harmony/internal/screen"
-	"github.com/indeedhat/harmony/internal/ui/controllers"
 )
 
-func New(displays []screen.DisplayBounds) *gin.Engine {
+// New UI controller group
+func New(ctx *common.Context, displays []screen.DisplayBounds) *gin.Engine {
 	router := gin.Default()
 
-	_ = controllers.New(router, displays)
+	_ = ui.New(router, displays)
+	_ = socket.New(ctx, router)
 
 	viewsConfig := goview.DefaultConfig
 	viewsConfig.Root = "./web/views"

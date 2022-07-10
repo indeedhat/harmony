@@ -1,4 +1,4 @@
-package mouse
+package device
 
 import (
 	"log"

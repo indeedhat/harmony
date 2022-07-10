@@ -4,4 +4,8 @@ build:
 
 .PHONY: run
 run: build
-	./kvm
+	./harmony-server
+
+.PHONY: run-client
+run-client: build
+	./harmony-client

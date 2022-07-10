@@ -1,4 +1,4 @@
-package controllers
+package ui
 
 import (
 	"net/http"
