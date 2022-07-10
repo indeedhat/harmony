@@ -1,0 +1,107 @@
+{{ define "content" }}
+    <section id="screens">
+        {{ range .groups }}
+            <section 
+                class="screen-group" style="width:{{ .Width }}px;height:{{ .Height }}px"
+                draggable="true"
+            >
+                {{ range $i, $d := .Displays }}
+                    <article 
+                        class="screen" 
+                        style="width:{{ $d.Width }}px;height:{{ $d.Height }}px;top:{{ $d.Y }}px;left:{{ $d.X }}px"
+                    >
+                        <span class="idx">{{ $i }}</span>
+                    </article>
+                {{ end }}
+            </section>
+        {{ end }}
+    </section>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #screens {
+            /* position: relative; */
+        }
+
+        #screens .screen-group {
+            position:absolute;
+        }
+
+        #screens .screen-group .screen {
+            position: absolute;
+            border: 4px solid black;
+        }
+
+        #screens .screen-group .screen span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .bad-screen {
+            background: rgba(255, 0, 0, 0.5);
+        }
+    </style>
+    <script>
+        let x = 0
+        let y = 0
+
+        function onDragStart(e) {
+            console.log("start", e)
+            x = e.clientX
+            y = e.clientY
+
+            this.addEventListener("mousemove", onDragMove)
+            this.addEventListener("mouseup", function() {
+                this.removeEventListener("mousemove", onDragMove);
+            })
+        }
+
+        function onDragEnd(e) {
+            console.log("end", e)
+            x = 0
+            y = 0
+        }
+
+        function onDragMove(e) {
+            console.log("move", {x: e.clientX, y: e.clientY, e})
+            let deltaX = x - e.clientX;
+            let deltaY = y - e.clientY;
+
+            x = e.clientX;
+            y = e.clientY;
+
+            this.style.top = (this.offsetTop - deltaY) + "px"
+            this.style.left = (this.offsetLeft - deltaX) + "px"
+        }
+
+        let groups = document.querySelectorAll(".screen-group");
+        console.log(groups)
+
+        for (let i = 0; i < groups.length; i++) {
+            let group = groups[i];
+            console.log(group, i)
+
+            group.addEventListener("drag", function() {
+                console.log(arguments)
+            });
+            group.addEventListener("mousedown", onDragStart)
+            group.addEventListener("dragenter", function() {
+                this.classList.add(".bad-screen")
+            })
+            group.addEventListener("dragleave", function() {
+                this.classList.remove(".bad-screen")
+            })
+        }
+    </script>
+{{ end }}
