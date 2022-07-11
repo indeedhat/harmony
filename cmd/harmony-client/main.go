@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/holoplot/go-evdev"
+	"github.com/indeedhat/harmony/internal/device"
 	"github.com/indeedhat/harmony/internal/net"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -15,18 +16,10 @@ const (
 )
 
 func main() {
-	devPath := "/dev/input/event25"
-	origDev, err := evdev.Open(devPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	newDev, err := evdev.CloneDevice(origDev)
-	origDev.Close()
+	newDev, err := device.CreateVirtualDevice()
 	if err != nil {
 		log.Fatal("failed to clone device: ", err.Error())
 	}
-	defer evdev.DestroyDevice(newDev)
 
 	u := url.URL{Scheme: "ws", Host: serverAddress, Path: "/ws"}
 

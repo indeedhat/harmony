@@ -15,7 +15,7 @@ func main() {
 	ctx := common.NewContext()
 	defer ctx.Cancel()
 
-	devPath := "/dev/input/event25"
+	devPath := "/dev/input/event13"
 	dev, err := evdev.Open(devPath)
 	if err != nil {
 		log.Fatal(err)
@@ -70,6 +70,7 @@ func eventListener(ctx *common.Context, dev *evdev.InputDevice) {
 	for {
 		event, err := dev.ReadOne()
 		if err != nil {
+			log.Print(err)
 			return
 		}
 
@@ -86,6 +87,7 @@ func eventListener(ctx *common.Context, dev *evdev.InputDevice) {
 
 		// if
 
+		log.Print("sending event")
 		ctx.EventQ <- event
 	}
 }
@@ -119,11 +121,12 @@ func inputLock(ctx *common.Context, dev *evdev.InputDevice) {
 		case idx := <-ctx.GrabQ:
 			log.Print("grab q")
 			if ctx.ActiveClient != nil || len(ctx.ClientPool) <= idx {
+				log.Print("nope")
 				continue
 			}
 
 			ctx.ActiveClient = ctx.ClientPool[idx]
-			dev.Grab()
+			log.Print(dev.Grab())
 		}
 	}
 }
