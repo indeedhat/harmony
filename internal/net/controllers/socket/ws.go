@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/client"
 	"github.com/indeedhat/harmony/internal/net"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -33,7 +33,7 @@ func (soc *Socket) Ws() gin.HandlerFunc {
 		}
 
 		clientIndex := len(soc.appCtx.ClientPool)
-		client := common.NewClient(ws, clientIndex)
+		client := client.New(ws, clientIndex)
 		soc.appCtx.AddClient(client)
 		defer soc.appCtx.RemoveClient(client)
 
@@ -46,7 +46,7 @@ func (soc *Socket) Ws() gin.HandlerFunc {
 }
 
 // readFromSocket and process/forward the messages
-func readFromSocket(client *common.Client, ws *websocket.Conn, done chan struct{}) {
+func readFromSocket(client *client.Client, ws *websocket.Conn, done chan struct{}) {
 	defer close(done)
 
 	ws.SetReadLimit(maxMessageSize)
@@ -82,7 +82,7 @@ func readFromSocket(client *common.Client, ws *websocket.Conn, done chan struct{
 }
 
 // ping the client to keep the connection alive
-func ping(client *common.Client, ws *websocket.Conn) {
+func ping(client *client.Client, ws *websocket.Conn) {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 

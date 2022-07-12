@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/gorilla/websocket"
-	"github.com/holoplot/go-evdev"
 	"github.com/indeedhat/harmony/internal/device"
 	"github.com/indeedhat/harmony/internal/net"
 	"github.com/vmihailenco/msgpack/v5"
@@ -20,6 +19,7 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to clone device: ", err.Error())
 	}
+	log.Print(newDev)
 
 	u := url.URL{Scheme: "ws", Host: serverAddress, Path: "/ws"}
 
@@ -40,6 +40,7 @@ func main() {
 	ws.WriteMessage(websocket.BinaryMessage, data)
 
 	for {
+		log.Print("reading message")
 		_, data, err := ws.ReadMessage()
 		if err != nil {
 			return
@@ -52,12 +53,13 @@ func main() {
 				continue
 			}
 
-			newDev.WriteOne(&evdev.InputEvent{
+			log.Print("writing to device")
+			log.Print(newDev.Write(device.InputEvent{
 				Time:  msg.Time,
-				Type:  evdev.EvType(msg.Type),
-				Code:  evdev.EvCode(msg.Code),
+				Type:  msg.Type,
+				Code:  msg.Code,
 				Value: msg.Value,
-			})
+			}))
 
 		default:
 			log.Print("invalid message type: ", string(data))

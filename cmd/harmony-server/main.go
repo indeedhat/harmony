@@ -6,16 +6,27 @@ import (
 
 	"github.com/holoplot/go-evdev"
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/device"
 	"github.com/indeedhat/harmony/internal/net"
 	"github.com/indeedhat/harmony/internal/net/router"
 	"github.com/jezek/xgb/xproto"
 )
 
 func main() {
+	devs := device.FindObservableDevices()
+	for _, dev := range devs {
+		defer dev.Close()
+		log.Print(dev)
+	}
+
+	log.Print(len(devs))
+
+	return
+
 	ctx := common.NewContext()
 	defer ctx.Cancel()
 
-	devPath := "/dev/input/event13"
+	devPath := "/dev/input/event25"
 	dev, err := evdev.Open(devPath)
 	if err != nil {
 		log.Fatal(err)
@@ -85,9 +96,6 @@ func eventListener(ctx *common.Context, dev *evdev.InputDevice) {
 		// disable active client
 		// move cursor back to center
 
-		// if
-
-		log.Print("sending event")
 		ctx.EventQ <- event
 	}
 }

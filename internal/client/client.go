@@ -1,4 +1,4 @@
-package common
+package client
 
 import (
 	"log"
@@ -18,8 +18,8 @@ type Client struct {
 	cancel context.CancelFunc
 }
 
-// NewClient constructor
-func NewClient(ws *websocket.Conn, idx int) *Client {
+// New constructor
+func New(ws *websocket.Conn, idx int) *Client {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Client{
@@ -42,10 +42,9 @@ func (c *Client) SendEvent(event *net.ServerHidEvent) {
 }
 
 // Close the client
-func (c *Client) Close(ctx *Context) {
+func (c *Client) Close() {
 	// close ws
 	c.Socket.Close()
-	c.cancel()
 }
 
 // Done aliases the client contexts Done method

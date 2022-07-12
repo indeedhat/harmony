@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	go build -o . ./...
+	CGO_ENABLED=0 go build -o . ./...
 
 .PHONY: run
 run: build

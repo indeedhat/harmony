@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/holoplot/go-evdev"
+	"github.com/indeedhat/harmony/internal/client"
 )
 
 // closedchan is a reusable closed channel.
@@ -19,8 +20,8 @@ func init() {
 type Context struct {
 	// Cilent related things
 	poolMu       sync.Mutex
-	ClientPool   []*Client
-	ActiveClient *Client
+	ClientPool   []*client.Client
+	ActiveClient *client.Client
 
 	// Event related things
 	EventQ chan *evdev.InputEvent
@@ -45,7 +46,7 @@ func NewContext() *Context {
 		EventQ:     make(chan *evdev.InputEvent),
 		ReleaseQ:   make(chan int),
 		GrabQ:      make(chan int),
-		ClientPool: make([]*Client, 0),
+		ClientPool: make([]*client.Client, 0),
 	}
 }
 
@@ -102,7 +103,7 @@ func (ctx *Context) ReleaseDevices() {
 }
 
 // AddClient to the pool
-func (ctx *Context) AddClient(client *Client) {
+func (ctx *Context) AddClient(client *client.Client) {
 	ctx.poolMu.Lock()
 	defer ctx.poolMu.Unlock()
 
@@ -110,18 +111,16 @@ func (ctx *Context) AddClient(client *Client) {
 }
 
 // RemoveClient from the pool
-func (ctx *Context) RemoveClient(client *Client) {
+func (ctx *Context) RemoveClient(client *client.Client) {
 	ctx.poolMu.Lock()
 	defer ctx.poolMu.Unlock()
 
 	log.Print("sending release")
-	ctx.ReleaseQ <- client.Idx
-	time.Sleep(10 * time.Millisecond)
-
 	if ctx.ActiveClient != nil && ctx.ActiveClient.Idx == client.Idx {
-
+		ctx.ClientPool = append(ctx.ClientPool[:client.Idx], ctx.ClientPool[client.Idx:]...)
 		ctx.ActiveClient = nil
 	}
 
-	ctx.ClientPool = append(ctx.ClientPool[:client.Idx], ctx.ClientPool[client.Idx:]...)
+	time.Sleep(10 * time.Millisecond)
+	ctx.ReleaseQ <- client.Idx
 }

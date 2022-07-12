@@ -1,13 +1,139 @@
 package device
 
 import (
+	"fmt"
+	"io/ioutil"
+	"path"
+
 	"github.com/holoplot/go-evdev"
 )
 
+var _ Device = (*EvdevDevice)(nil)
+
+type EvdevDevice struct {
+	dev *evdev.InputDevice
+}
+
+// Read an event from the device
+// this will block until an event happens or the device is closed
+func (evd *EvdevDevice) Read() (*InputEvent, error) {
+	event, err := evd.dev.ReadOne()
+	if err != nil {
+		return nil, err
+	}
+
+	return &InputEvent{
+		Time:  event.Time,
+		Type:  uint16(event.Type),
+		Code:  uint16(event.Code),
+		Value: event.Value,
+	}, nil
+}
+
+// Write an event to the device
+func (evd *EvdevDevice) Write(event InputEvent) error {
+	return evd.dev.WriteOne(&evdev.InputEvent{
+		Time:  event.Time,
+		Type:  evdev.EvType(event.Type),
+		Code:  evdev.EvCode(event.Code),
+		Value: event.Value,
+	})
+}
+
+// Close the device handle
+func (evd *EvdevDevice) Close() error {
+	return evd.dev.Close()
+}
+
+// String returns a string representation of the device
+// it conforms to fmt.Stringer
+func (evd *EvdevDevice) String() string {
+	var (
+		key bool
+		rel bool
+	)
+	for _, typ := range evd.dev.CapableTypes() {
+		if typ == evdev.EV_KEY {
+			key = true
+		}
+		if typ == evdev.EV_REL {
+			rel = true
+		}
+	}
+
+	name, _ := evd.dev.Name()
+	path := evd.dev.Path()
+
+	return fmt.Sprintf(`%s {
+    Name: "%s",
+    Path: "%s",
+    KeyEvents: "%v",
+    RelEvents: "%v",
+}`, "EventDevice", name, path, key, rel)
+}
+
+// FindObservableDevices thot have key or rel events
+func FindObservableDevices() (observable []Device) {
+	basePath := "/dev/input"
+
+	files, err := ioutil.ReadDir(basePath)
+	if err != nil {
+		return nil
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filePath := path.Join(basePath, file.Name())
+
+		dev, err := evdev.Open(filePath)
+		if err != nil {
+			continue
+		}
+
+		if !isObservable(dev) {
+			dev.Close()
+			continue
+		}
+
+		observable = append(observable, &EvdevDevice{dev})
+	}
+
+	return observable
+}
+
+func isObservable(dev *evdev.InputDevice) bool {
+	for _, typ := range dev.CapableTypes() {
+		if typ != evdev.EV_KEY && typ != evdev.EV_REL {
+			continue
+		}
+
+		events := dev.CapableEvents(typ)
+		if len(events) == 0 {
+			continue
+		}
+
+		for _, event := range events {
+			if event == evdev.REL_X || event == evdev.KEY_SPACE {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // CreateVirtualDevice that has as much mouse/keyboard capability as possible
 // This can be used to pipe all recieved events through on a client machine
-func CreateVirtualDevice() (*evdev.InputDevice, error) {
-	return evdev.CreateDevice("harmony-virt", map[evdev.EvType][]evdev.EvCode{
+func CreateVirtualDevice() (Device, error) {
+	dev, err := evdev.CreateDevice("harmony-virt", evdev.InputID{
+		BusType: 0x03,
+		Vendor:  0x4712,
+		Product: 0x0816,
+		Version: 1,
+	}, map[evdev.EvType][]evdev.EvCode{
 		evdev.EV_REL: {
 			evdev.REL_X,
 			evdev.REL_Y,
@@ -591,4 +717,10 @@ func CreateVirtualDevice() (*evdev.InputDevice, error) {
 			evdev.KEY_MACRO_PRESET3,
 		},
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &EvdevDevice{dev}, nil
 }

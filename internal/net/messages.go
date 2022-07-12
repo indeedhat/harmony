@@ -57,6 +57,7 @@ func (crc *ClientReleaseControl) Marshal() ([]byte, error) {
 
 var _ WsMessage = (*ServerHidEvent)(nil)
 
+// Deprecated
 // ServerSendAction sends a HID event to be processed by the client
 // this is just an alias of the evdev inputEvent struct
 type ServerHidEvent struct {
