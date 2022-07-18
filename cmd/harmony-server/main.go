@@ -13,28 +13,15 @@ import (
 )
 
 func main() {
-	devs := device.FindObservableDevices()
-	for _, dev := range devs {
-		defer dev.Close()
-		log.Print(dev)
-	}
-
-	log.Print(len(devs))
-
-	return
-
 	ctx := common.NewContext()
 	defer ctx.Cancel()
 
-	devPath := "/dev/input/event25"
-	dev, err := evdev.Open(devPath)
+	dm, err := device.NewDeviceManager(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer dev.Close()
 
 	go eventConsumer(ctx)
-	go eventListener(ctx, dev)
 	go watchCursor(ctx)
 	go inputLock(ctx, dev)
 
@@ -76,54 +63,13 @@ func watchCursor(ctx *common.Context) {
 	}
 }
 
-// eventListener listenes for events from a single device and forwards them to the global queue
-func eventListener(ctx *common.Context, dev *evdev.InputDevice) {
-	for {
-		event, err := dev.ReadOne()
-		if err != nil {
-			log.Print(err)
-			return
-		}
-
-		if ctx.ActiveClient == nil {
-			continue
-		}
-
-		// TODO:
-		// listen for alt enter
-		// send alt up event to client
-		// release devices
-		// disable active client
-		// move cursor back to center
-
-		ctx.EventQ <- event
-	}
-}
-
-// eventConsumer consumes events from the global queue and forwards them to the active client
-// if any
-func eventConsumer(ctx *common.Context) {
-	for ev := range ctx.EventQ {
-		if ctx.ActiveClient == nil {
-			continue
-		}
-
-		ctx.ActiveClient.SendEvent(&net.ServerHidEvent{
-			Time:  ev.Time,
-			Type:  uint16(ev.Type),
-			Code:  uint16(ev.Code),
-			Value: ev.Value,
-		})
-	}
-}
-
-func inputLock(ctx *common.Context, dev *evdev.InputDevice) {
+func inputLock(ctx *common.Context, dm *device.DeviceManager) {
 	for {
 		select {
 		case idx := <-ctx.ReleaseQ:
 			log.Print("release q")
 			if ctx.ActiveClient != nil && idx == ctx.ActiveClient.Idx {
-				dev.Ungrab()
+				dm.Release()
 			}
 
 		case idx := <-ctx.GrabQ:
@@ -134,7 +80,7 @@ func inputLock(ctx *common.Context, dev *evdev.InputDevice) {
 			}
 
 			ctx.ActiveClient = ctx.ClientPool[idx]
-			log.Print(dev.Grab())
+			log.Print(dm.Grab())
 		}
 	}
 }

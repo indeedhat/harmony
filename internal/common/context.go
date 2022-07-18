@@ -1,13 +1,8 @@
 package common
 
 import (
-	"log"
 	"sync"
 	"sync/atomic"
-	"time"
-
-	"github.com/holoplot/go-evdev"
-	"github.com/indeedhat/harmony/internal/client"
 )
 
 // closedchan is a reusable closed channel.
@@ -17,37 +12,19 @@ func init() {
 	close(closedchan)
 }
 
+// Context provides a common context for the application
+// currently it just reimplements the close functionalyty of the
+// stdlib context package
 type Context struct {
-	// Cilent related things
-	poolMu       sync.Mutex
-	ClientPool   []*client.Client
-	ActiveClient *client.Client
-
-	// Event related things
-	EventQ chan *evdev.InputEvent
-
-	// Clients that want to release control send on this chanel
-	ReleaseQ chan int
-	// Clients that want to grab input send on this chanel
-	GrabQ chan int
-
 	// Close related things
 	done     atomic.Value
 	doneMu   sync.Mutex
 	canceled bool
-
-	// device related things
-	devices []*evdev.InputDevice
 }
 
 // NewContext constructor
 func NewContext() *Context {
-	return &Context{
-		EventQ:     make(chan *evdev.InputEvent),
-		ReleaseQ:   make(chan int),
-		GrabQ:      make(chan int),
-		ClientPool: make([]*client.Client, 0),
-	}
+	return &Context{}
 }
 
 // Done returns a chan if the context is canceled
@@ -86,41 +63,4 @@ func (ctx *Context) Cancel() {
 	} else {
 		close(done)
 	}
-}
-
-// GrabDevices will stop input events for the local devices from propergating to the system
-func (ctx *Context) GrabDevices() {
-	for _, dev := range ctx.devices {
-		dev.Grab()
-	}
-}
-
-// ReleaseDevices allowing input events to be processed locally
-func (ctx *Context) ReleaseDevices() {
-	for _, dev := range ctx.devices {
-		dev.Ungrab()
-	}
-}
-
-// AddClient to the pool
-func (ctx *Context) AddClient(client *client.Client) {
-	ctx.poolMu.Lock()
-	defer ctx.poolMu.Unlock()
-
-	ctx.ClientPool = append(ctx.ClientPool, client)
-}
-
-// RemoveClient from the pool
-func (ctx *Context) RemoveClient(client *client.Client) {
-	ctx.poolMu.Lock()
-	defer ctx.poolMu.Unlock()
-
-	log.Print("sending release")
-	if ctx.ActiveClient != nil && ctx.ActiveClient.Idx == client.Idx {
-		ctx.ClientPool = append(ctx.ClientPool[:client.Idx], ctx.ClientPool[client.Idx:]...)
-		ctx.ActiveClient = nil
-	}
-
-	time.Sleep(10 * time.Millisecond)
-	ctx.ReleaseQ <- client.Idx
 }

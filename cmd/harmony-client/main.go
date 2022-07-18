@@ -21,6 +21,48 @@ func main() {
 	}
 	log.Print(newDev)
 
+	// for i := 0; i < 400; i++ {
+	// 	time.Sleep(10 * time.Millisecond)
+
+	// 	if i < 100 {
+	// 		newDev.Write(device.InputEvent{
+	// 			Time:  syscall.NsecToTimeval(int64(time.Now().Nanosecond())),
+	// 			Type:  evdev.EV_ABS,
+	// 			Code:  evdev.ABS_X,
+	// 			Value: 20,
+	// 		})
+	// 		// } else if i < 200 {
+	// 		// 	dev.WriteOne(&evdev.InputEvent{
+	// 		// 		Time:  syscall.NsecToTimeval(int64(time.Now().Nanosecond())),
+	// 		// 		Type:  evdev.EV_ABS,
+	// 		// 		Code:  evdev.ABS_Y,
+	// 		// 		Value: 20,
+	// 		// 	})
+	// 		// } else if i < 300 {
+	// 		// 	dev.WriteOne(&evdev.InputEvent{
+	// 		// 		Time:  syscall.NsecToTimeval(int64(time.Now().Nanosecond())),
+	// 		// 		Type:  evdev.EV_ABS,
+	// 		// 		Code:  evdev.ABS_X,
+	// 		// 		Value: -20,
+	// 		// 	})
+	// 		// } else {
+	// 		// 	dev.WriteOne(&evdev.InputEvent{
+	// 		// 		Time:  syscall.NsecToTimeval(int64(time.Now().Nanosecond())),
+	// 		// 		Type:  evdev.EV_ABS,
+	// 		// 		Code:  evdev.ABS_Y,
+	// 		// 		Value: -20,
+	// 		// 	})
+	// 	}
+
+	// 	newDev.Write(device.InputEvent{
+	// 		Time:  syscall.NsecToTimeval(int64(time.Now().Nanosecond())),
+	// 		Type:  evdev.EV_SYN,
+	// 		Code:  evdev.SYN_REPORT,
+	// 		Value: 0,
+	// 	})
+	// }
+	// return
+
 	u := url.URL{Scheme: "ws", Host: serverAddress, Path: "/ws"}
 
 	ws, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -54,12 +96,12 @@ func main() {
 			}
 
 			log.Print("writing to device")
-			log.Print(newDev.Write(device.InputEvent{
-				Time:  msg.Time,
-				Type:  msg.Type,
-				Code:  msg.Code,
-				Value: msg.Value,
-			}))
+			// log.Print(newDev.Write(device.InputEvent{
+			// 	Time:  msg.Time,
+			// 	Type:  msg.Type,
+			// 	Code:  msg.Code,
+			// 	Value: msg.Value,
+			// }))
 
 		default:
 			log.Print("invalid message type: ", string(data))

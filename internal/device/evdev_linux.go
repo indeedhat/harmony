@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/holoplot/go-evdev"
+	"github.com/indeedhat/harmony/internal/common"
 )
 
 var _ Device = (*EvdevDevice)(nil)
@@ -16,13 +17,13 @@ type EvdevDevice struct {
 
 // Read an event from the device
 // this will block until an event happens or the device is closed
-func (evd *EvdevDevice) Read() (*InputEvent, error) {
+func (evd *EvdevDevice) Read() (*common.InputEvent, error) {
 	event, err := evd.dev.ReadOne()
 	if err != nil {
 		return nil, err
 	}
 
-	return &InputEvent{
+	return &common.InputEvent{
 		Time:  event.Time,
 		Type:  uint16(event.Type),
 		Code:  uint16(event.Code),
@@ -31,7 +32,7 @@ func (evd *EvdevDevice) Read() (*InputEvent, error) {
 }
 
 // Write an event to the device
-func (evd *EvdevDevice) Write(event InputEvent) error {
+func (evd *EvdevDevice) Write(event *common.InputEvent) error {
 	return evd.dev.WriteOne(&evdev.InputEvent{
 		Time:  event.Time,
 		Type:  evdev.EvType(event.Type),
@@ -70,6 +71,21 @@ func (evd *EvdevDevice) String() string {
     KeyEvents: "%v",
     RelEvents: "%v",
 }`, "EventDevice", name, path, key, rel)
+}
+
+// Grab exclusive access to the device
+func (evd *EvdevDevice) Grab() error {
+	return evd.dev.Grab()
+}
+
+// Release the exclusive lock on the device
+func (evd *EvdevDevice) Release() error {
+	return evd.dev.Ungrab()
+}
+
+// ID returns a unique identifer for the underlying device
+func (evd *EvdevDevice) ID() string {
+	return evd.dev.Path()
 }
 
 // FindObservableDevices thot have key or rel events
