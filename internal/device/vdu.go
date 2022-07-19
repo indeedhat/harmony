@@ -17,7 +17,9 @@ type Cursor struct {
 
 // Vdu provides a common interface for interacting with system dependent display managers
 type Vdu interface {
+	Close() error
 	CursorPos() (*Cursor, error)
 	DisplayBounds() ([]DisplayBounds, error)
-	Close() error
+	HideCursor() error
+	ShowCursor() error
 }

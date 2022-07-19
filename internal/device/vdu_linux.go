@@ -6,6 +6,7 @@ import (
 
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/jezek/xgb"
+	"github.com/jezek/xgb/xfixes"
 	"github.com/jezek/xgb/xinerama"
 	"github.com/jezek/xgb/xproto"
 )
@@ -83,41 +84,14 @@ func (x11 X11Vdu) CursorPos() (*Cursor, error) {
 	}, nil
 }
 
-// GetDisplayBounds for all connected monitors
-func GetDisplayBounds(cons ...*xgb.Conn) ([]DisplayBounds, error) {
-	var (
-		con *xgb.Conn
-		err error
-	)
+// HideCursor hides the mouse cursor from view making it appear to have left the desktop
+func (x11 X11Vdu) HideCursor() error {
+	return xfixes.HideCursorChecked(x11.xcon, x11.window).
+		Check()
+}
 
-	if len(cons) == 0 {
-		con, err = common.InitXCon()
-		if err != nil {
-			return nil, err
-		}
-		defer con.Close()
-	} else {
-		con = cons[0]
-	}
-
-	xinerama.Init(con)
-	screens, err := xinerama.QueryScreens(con).Reply()
-	if err != nil {
-		return nil, err
-	}
-
-	count := int(screens.Number)
-	displays := make([]DisplayBounds, 0, count)
-
-	for i := 0; i < count; i++ {
-		screen := screens.ScreenInfo[i]
-		displays = append(displays, DisplayBounds{
-			X:      int(screen.XOrg),
-			Y:      int(screen.YOrg),
-			Width:  int(screen.Width),
-			Height: int(screen.Height),
-		})
-	}
-
-	return displays, nil
+// ShowCursor unhides the cursor making it appear to have reappeared on the desktop
+func (x11 X11Vdu) ShowCursor() error {
+	return xfixes.ShowCursorChecked(x11.xcon, x11.window).
+		Check()
 }
