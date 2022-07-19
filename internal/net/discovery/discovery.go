@@ -3,6 +3,7 @@ package discovery
 import (
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/indeedhat/harmony/internal/common"
@@ -44,6 +45,7 @@ type Service struct {
 	ctx   *common.Context
 	addr  *net.UDPAddr
 	con   *net.UDPConn
+	wg    sync.WaitGroup
 }
 
 // New creates a new instance of the Sirvice struct
@@ -69,7 +71,12 @@ func New(ctx *common.Context) (*Service, error) {
 
 // Run the discovery service
 func (svc *Service) Run() {
+	svc.wg.Add(1)
 
+	go svc.discover()
+	go svc.listen()
+
+	svc.wg.Wait()
 }
 
 // discover peers running in server mode
@@ -90,6 +97,8 @@ func (svc *Service) discover() {
 			}
 
 			if pollCount >= config.DiscoveryPollCount {
+				svc.state = stateServer
+				svc.Server <- Server{}
 				return
 			}
 
@@ -107,6 +116,8 @@ func (svc *Service) discover() {
 
 // listen for messages from peers and respond appropriately
 func (svc *Service) listen() {
+	defer svc.wg.Done()
+
 	for {
 		buf := make([]byte, 14)
 		_, addr, err := svc.con.ReadFromUDP(buf)

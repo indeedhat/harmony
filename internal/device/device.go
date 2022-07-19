@@ -26,14 +26,19 @@ type Device interface {
 }
 
 type DeviceManager struct {
+	// Events stream from grabbed devices to be consumed externally
 	Events chan *common.InputEvent
-	Input  chan *common.InputEvent
+	// Input events from external server to be passed to the vdev
+	Input chan *common.InputEvent
 
-	activeDevice *Device
-	devices      []Device
-	virtualDev   Device
-	mux          sync.Mutex
-	ctx          *common.Context
+	// grabbed state of watched devices
+	grabbed bool
+	// devices currently being watched
+	devices []Device
+	// virtual device used for incomming events from peers
+	virtualDev Device
+	mux        sync.Mutex
+	ctx        *common.Context
 }
 
 // NewDeviceManager constructor
@@ -61,8 +66,6 @@ func NewDeviceManager(ctx *common.Context) (*DeviceManager, error) {
 		go dm.trackEvents(dev)
 	}
 
-	go dm.consumeEvents()
-
 	return dm, nil
 }
 
@@ -70,9 +73,14 @@ func NewDeviceManager(ctx *common.Context) (*DeviceManager, error) {
 // this will stop rative input events being handled by any other program/service on the machine
 func (dm *DeviceManager) GrabAccess() error {
 	var err error
+	dm.grabbed = true
 
 	for _, dev := range dm.devices {
 		err = common.WrapError(err, dev.Grab())
+	}
+
+	if err != nil {
+		dm.ReleaseAccess()
 	}
 
 	return err
@@ -87,6 +95,8 @@ func (dm *DeviceManager) ReleaseAccess() error {
 	for _, dev := range dm.devices {
 		err = common.WrapError(err, dev.Release())
 	}
+
+	dm.grabbed = false
 
 	return err
 }
@@ -119,6 +129,9 @@ func (dm *DeviceManager) Watch(newDev Device) {
 	}
 
 	dm.devices = append(dm.devices, newDev)
+	if dm.grabbed {
+		newDev.Grab()
+	}
 }
 
 // Forget a watched device
@@ -132,35 +145,17 @@ func (dm *DeviceManager) Forget(newDev Device) {
 			continue
 		}
 
+		if dm.grabbed {
+			dev.Release()
+		}
+
 		dm.devices = append(dm.devices[:i], dm.devices[i+1:]...)
 	}
 }
 
-// Select a watched device to be active
-func (dm *DeviceManager) Select(id string) bool {
-	dm.mux.Lock()
-	defer dm.mux.Unlock()
-
-	dm.ClearSelection()
-
-	for i, dev := range dm.devices {
-		if dev.ID() != id {
-			continue
-		}
-
-		dm.activeDevice = &dm.devices[i]
-		return true
-	}
-
-	return false
-}
-
-// ClearSelection of active device
-func (dm *DeviceManager) ClearSelection() {
-	dm.activeDevice = nil
-}
-
 func (dm *DeviceManager) trackEvents(dev Device) {
+	defer dm.Forget(dev)
+
 	for {
 		event, err := dev.Read()
 		if err != nil {
@@ -169,22 +164,16 @@ func (dm *DeviceManager) trackEvents(dev Device) {
 
 		dm.Events <- event
 	}
-
-	dm.Forget(dev)
 }
 
-func (dm *DeviceManager) consumeEvents() {
+func (dm *DeviceManager) consumeIncommingEvents() {
 	for {
 		select {
-		case ev := <-dm.Events:
-			if dm.activeDevice == nil {
-				continue
-			}
-
-			(*dm.activeDevice).Write(ev)
-
 		case <-dm.ctx.Done():
 			return
+
+		case ev := <-dm.Input:
+			dm.virtualDev.Write(ev)
 		}
 	}
 }
