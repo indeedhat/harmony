@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/indeedhat/harmony/internal/common"
 	"github.com/jezek/xgb"
 	"github.com/jezek/xgb/xfixes"
 	"github.com/jezek/xgb/xinerama"

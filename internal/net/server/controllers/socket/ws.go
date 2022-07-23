@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/indeedhat/harmony/internal/client"
 	"github.com/indeedhat/harmony/internal/net"
+	"github.com/indeedhat/harmony/internal/net/client"
 	"github.com/vmihailenco/msgpack/v5"
 )
 

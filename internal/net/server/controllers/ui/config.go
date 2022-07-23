@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/indeedhat/harmony/internal/screen"
+	"github.com/indeedhat/harmony/internal/device"
 )
 
 // Index controller
@@ -12,7 +12,7 @@ func (ui *UI) Index() gin.HandlerFunc {
 	type DisplayGroup struct {
 		Width    int
 		Height   int
-		Displays []screen.DisplayBounds
+		Displays []device.DisplayBounds
 	}
 
 	max := func(a, b int) int {
@@ -25,7 +25,7 @@ func (ui *UI) Index() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		groups := make([]DisplayGroup, 2)
 		for _, display := range ui.displays {
-			screen := screen.DisplayBounds{
+			screen := device.DisplayBounds{
 				X:      display.X / 4,
 				Y:      display.Y / 4,
 				Width:  display.Width / 4,

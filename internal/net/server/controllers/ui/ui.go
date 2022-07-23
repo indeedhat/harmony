@@ -2,15 +2,15 @@ package ui
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/indeedhat/harmony/internal/screen"
+	"github.com/indeedhat/harmony/internal/device"
 )
 
 type UI struct {
-	displays []screen.DisplayBounds
+	displays []device.DisplayBounds
 }
 
 // New UI controller
-func New(router *gin.Engine, displays []screen.DisplayBounds) *UI {
+func New(router *gin.Engine, displays []device.DisplayBounds) *UI {
 	ui := &UI{
 		displays,
 	}
