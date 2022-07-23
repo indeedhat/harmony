@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <style>
+            .box {
+                position: absolute;
+                border: 4px solid black;
+                height: 200px;
+                width: 200px;
+            }
+
+            .closest {
+                background: green;
+            }
+
+            .top {
+                border-top-color: orange;
+            }
+            .right {
+                border-right-color: orange;
+            }
+            .bottom {
+                border-bottom-color: orange;
+            }
+            .left {
+                border-left-color: orange;
+            }
+        </style>
+    </head>
+    <body>
+        <article class="box" draggable="true"></article>
+        <article class="box" draggable="true"></article>
+        <article class="box" draggable="true"></article>
+        <article class="box" draggable="true"></article>
+        <script>
+            let groups = document.querySelectorAll(".box");
+            let x = 0
+            let y = 0
+
+            function onDragStart(e) {
+                e.preventDefault();
+                x = e.clientX
+                y = e.clientY
+
+                let cb = (e) => {
+                    onDragMove(this, e);
+                };
+
+                document.onmousemove = cb;
+                document.onmouseup = () => document.onmousemove = null;
+            }
+
+            function onDragMove(el, e) {
+                e.preventDefault();
+
+                highlightClosest(groups, el);
+
+                let deltaX = x - e.clientX;
+                let deltaY = y - e.clientY;
+
+                x = e.clientX;
+                y = e.clientY;
+
+                el.style.top = (el.offsetTop - deltaY) + "px"
+                el.style.left = (el.offsetLeft - deltaX) + "px"
+            }
+
+            function highlightClosest(elems, el) 
+            {
+                let closestEl = null;
+                let closestDistance = 1 << 30;
+                let elPoints = getPoints(el);
+
+                for (let i = 0; i < elems.length; i++) {
+                    elems[i].classList.remove("closest");
+                    elems[i].classList.remove("top");
+                    elems[i].classList.remove("right");
+                    elems[i].classList.remove("bottom");
+                    elems[i].classList.remove("left");
+
+                    if (elems[i] == el) {
+                        continue
+                    }
+
+                    let subPoints = getPoints(elems[i]);
+
+                    for (let x = 0; x < 4; x++) {
+                        for (let y = 0; y < 4; y++) {
+                            let dst = distance(elPoints[x], subPoints[y]);
+                            if (dst < closestDistance) {
+                                closestDistance = dst;
+                                closestEl = elems[i];
+                            }
+                        }
+                    }
+                }
+
+                if (closestEl != null) {
+                    closestEl.classList.add("closest")
+                    highlightClosestEdge(el, closestEl)
+                }
+            }
+
+            function highlightClosestEdge(el1, el2) 
+            {
+                let closestDistance = 1 << 30;
+                let e1Points = getEdgePoints(el1);
+                let e2Points = getEdgePoints(el2);
+                let closest = null;
+
+                let options = [
+                    ["top", "top"],
+                    ["top", "bottom"],
+                    ["bottom", "top"],
+                    ["bottom", "bottom"],
+                    ["left", "left"],
+                    ["left", "right"],
+                    ["right", "left"],
+                    ["right", "right"],
+                ];
+
+                for (let i = 0; i < options.length; i++) {
+                    let [ e1e, e2e ] = options[i];
+                    let dst = distance(e1Points[e1e], e2Points[e2e]);
+                    console.log({ e1e, e2e, dst })
+                    if (dst < closestDistance) {
+                        closestDistance = dst
+                        closest = options[i]
+                    }
+                }
+
+                console.log(closest)
+                el1.classList.add(closest[0])
+                el2.classList.add(closest[1])
+            }
+
+            function getPoints(el)
+            {
+                let top = el.offsetTop;
+                let left = el.offsetLeft;
+                let width = el.offsetWidth;
+                let height = el.offsetHeight;
+
+                return [
+                    {x: left, y: top},
+                    {x: left + width, y: top},
+                    {x: left + width, y: top + height},
+                    {x: left, y: top + height}
+                ];
+            }
+
+            function getEdgePoints(el)
+            {
+                let top = el.offsetTop;
+                let left = el.offsetLeft;
+                let width = el.offsetWidth;
+                let height = el.offsetHeight;
+
+                return {
+                    top: {x: left + width / 2, y: top},
+                    right: {x: left + width, y: top + height / 2},
+                    bottom: {x: left + width / 2, y: top + height},
+                    left: {x: left, y: top + height / 2}
+                };
+            }
+
+            function distance(pointA, pointB)
+            {
+                let a = pointA.x - pointB.x;
+                let b = pointA.y - pointB.y;
+
+                return Math.sqrt(a * a + b * b);
+            }
+
+
+            for (let i = 0; i < groups.length; i++) {
+                let group = groups[i];
+                group.addEventListener("mousedown", onDragStart)
+            }
+        </script>
+    </body>
+</html>
