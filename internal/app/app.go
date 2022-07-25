@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/google/uuid"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/device"
 	"github.com/indeedhat/harmony/internal/net"
@@ -15,6 +16,7 @@ type Harmony struct {
 	serverMode bool
 	active     bool
 	client     *net.Client
+	uuid       uuid.UUID
 }
 
 // New sets up a new Harmony instance
@@ -33,6 +35,7 @@ func New(ctx *common.Context) (*Harmony, error) {
 		ctx:      ctx,
 		discover: discover,
 		dev:      dev,
+		uuid:     uuid.New(),
 	}, nil
 }
 
@@ -94,7 +97,7 @@ func (app *Harmony) startClient(ip string) error {
 		ip = "127.0.0.1"
 	}
 
-	client, err := net.NewClient(app.ctx, ip)
+	client, err := net.NewClient(app.ctx, app.uuid, ip)
 	if err != nil {
 		return err
 	}

@@ -3,15 +3,17 @@ package common
 import (
 	"syscall"
 
+	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
 type MsgType byte
 
 const (
-	MsgTypeCConnect MsgType = iota
-	MsgTypeCReleaseControl
-	MsgTypeSHidEvent
+	MsgTypeConnect MsgType = iota
+	MsgTypeFocusRecieved
+	MsgTypeChangeFoucs
+	MsgTypeInputEvent
 )
 
 // WsMessage interface describes any message/event that is transmissable
@@ -40,13 +42,14 @@ func (ie *InputEvent) Marshal() ([]byte, error) {
 		return nil, err
 	}
 
-	base := []byte{byte(MsgTypeSHidEvent), ';'}
+	base := []byte{byte(MsgTypeInputEvent), ';'}
 	return append(base, data...), nil
 }
 
 // ClientConnect is sent from the client on connect to inform the server about itself
 type ClientConnect struct {
-	Hostname string `msgpack:"h"`
+	Hostname string    `msgpack:"h"`
+	UUID     uuid.UUID `msgpack:"u"`
 }
 
 var _ WsMessage = (*ClientConnect)(nil)
@@ -58,25 +61,46 @@ func (cc *ClientConnect) Marshal() ([]byte, error) {
 		return nil, err
 	}
 
-	base := []byte{byte(MsgTypeCConnect), ';'}
+	base := []byte{byte(MsgTypeConnect), ';'}
 	return append(base, data...), nil
 }
 
-// ClientReleaseControl informs the server to take control back over the hid devices
-type ClientReleaseControl struct {
-	X uint `msgpack:"x"`
-	Y uint `msgpack:"y"`
+// ChangeFocus from the active client to a peer
+type ChangeFocus struct {
+	UUID uuid.UUID `msgpack:"u"`
+	X    uint      `msgpack:"x"`
+	Y    uint      `msgpack:"y"`
 }
 
-var _ WsMessage = (*ClientReleaseControl)(nil)
+var _ WsMessage = (*ChangeFocus)(nil)
 
-// Marshal ClientReleaseControl struct into a byte array for sending via websocket
-func (crc *ClientReleaseControl) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(crc)
+// Marshal ChangeFocus struct into a byte array for sending via websocket
+func (cf *ChangeFocus) Marshal() ([]byte, error) {
+	data, err := msgpack.Marshal(cf)
 	if err != nil {
 		return nil, err
 	}
 
-	base := []byte{byte(MsgTypeCReleaseControl), ';'}
+	base := []byte{byte(MsgTypeChangeFoucs), ';'}
+	return append(base, data...), nil
+}
+
+// FocusRecieved from a peer
+// this message will be sent to the active client to inform them they now have focus
+type FocusRecieved struct {
+	X uint `msgpack:"x"`
+	Y uint `msgpack:"y"`
+}
+
+var _ WsMessage = (*FocusRecieved)(nil)
+
+// Marshal FocusRecieved struct into a byte array for sending via websocket
+func (fr *FocusRecieved) Marshal() ([]byte, error) {
+	data, err := msgpack.Marshal(fr)
+	if err != nil {
+		return nil, err
+	}
+
+	base := []byte{byte(MsgTypeFocusRecieved), ';'}
 	return append(base, data...), nil
 }

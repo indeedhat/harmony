@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
@@ -17,12 +19,13 @@ type Client struct {
 	// Input for events to be sent to the server
 	Input chan *common.InputEvent
 
-	ctx *common.Context
-	ws  *websocket.Conn
+	ctx  *common.Context
+	ws   *websocket.Conn
+	uuid uuid.UUID
 }
 
 // NewClient harmony client
-func NewClient(ctx *common.Context, ip string) (*Client, error) {
+func NewClient(ctx *common.Context, uuid uuid.UUID, ip string) (*Client, error) {
 	serverAddress := fmt.Sprintf("%s:%d", ip, config.ServerPort)
 	u := url.URL{Scheme: "ws", Host: serverAddress, Path: "/ws"}
 
@@ -63,8 +66,14 @@ func (cnt *Client) SendMessage(msg common.WsMessage) error {
 }
 
 func (cnt *Client) sendConnect() error {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "Unknown"
+	}
+
 	msg := &common.ClientConnect{
-		Hostname: "test-client",
+		Hostname: hostname,
+		UUID:     cnt.uuid,
 	}
 
 	return cnt.SendMessage(msg)

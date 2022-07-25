@@ -1,23 +1,16 @@
 package socket
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/indeedhat/harmony/internal/net"
-	"github.com/indeedhat/harmony/internal/net/client"
+	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/config"
 	"github.com/vmihailenco/msgpack/v5"
-)
-
-const (
-	writeWait        = 10 * time.Second
-	maxMessageSize   = 8192
-	pongWait         = 60 * time.Second
-	pingPeriod       = (pongWait * 9) / 10
-	closeGracePeriod = 10 * time.Second
 )
 
 // Ws handler for server - client communications
@@ -32,27 +25,22 @@ func (soc *Socket) Ws() gin.HandlerFunc {
 			return
 		}
 
-		clientIndex := len(soc.appCtx.ClientPool)
-		client := client.New(ws, clientIndex)
-		soc.appCtx.AddClient(client)
-		defer soc.appCtx.RemoveClient(client)
-
 		done := make(chan struct{})
-		go readFromSocket(client, ws, done)
-		go ping(client, ws)
+		go soc.readFromSocket(ws, done)
+		go ping(soc.appCtx, ws)
 
 		<-done
 	}
 }
 
 // readFromSocket and process/forward the messages
-func readFromSocket(client *client.Client, ws *websocket.Conn, done chan struct{}) {
+func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 	defer close(done)
 
-	ws.SetReadLimit(maxMessageSize)
-	ws.SetReadDeadline(time.Now().Add(pongWait))
+	ws.SetReadLimit(config.MaxMessageSize)
+	ws.SetReadDeadline(time.Now().Add(config.PongWait))
 	ws.SetPongHandler(func(string) error {
-		ws.SetReadDeadline(time.Now().Add(pongWait))
+		ws.SetReadDeadline(time.Now().Add(config.PongWait))
 		return nil
 	})
 
@@ -67,35 +55,41 @@ func readFromSocket(client *client.Client, ws *websocket.Conn, done chan struct{
 		}
 
 		switch data[0] {
-		case byte(net.MsgTypeCConnect):
-			var msg net.ClientConnect
+		case byte(common.MsgTypeConnect):
+			var msg common.ClientConnect
+
 			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
 				log.Print("ws: failed to unmarshal message")
 			}
 
-			client.Config = &msg
+			soc.clients[msg.UUID] = ws
 
-		case byte(net.MsgTypeCReleaseControl):
-			// TODO: make this happen
+		case byte(common.MsgTypeChangeFoucs):
+			// TODO: change the focus to the new active client
+			// send message to active client
+
+		case byte(common.MsgTypeFocusRecieved):
+			// TODO: unlock inputs
 		}
 	}
 }
 
 // ping the client to keep the connection alive
-func ping(client *client.Client, ws *websocket.Conn) {
-	ticker := time.NewTicker(pingPeriod)
+func ping(ctx *common.Context, ws *websocket.Conn) {
+	ticker := time.NewTicker(config.PingPeriod)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
-				if err.Error() == "websocket: close sent" {
-					return
-				}
+			err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().
+				Add(config.WriteWait))
+
+			if err != nil && errors.Is(err, websocket.ErrCloseSent) {
+				return
 			}
 
-		case <-client.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
