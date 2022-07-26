@@ -4,6 +4,7 @@ import (
 	"syscall"
 
 	"github.com/google/uuid"
+	"github.com/indeedhat/harmony/internal/transition"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -13,7 +14,9 @@ const (
 	MsgTypeConnect MsgType = iota
 	MsgTypeFocusRecieved
 	MsgTypeChangeFoucs
+	MsgTypeReleaseFouces
 	MsgTypeInputEvent
+	MsgTypeTrasitionAssigned
 )
 
 // WsMessage interface describes any message/event that is transmissable
@@ -88,8 +91,9 @@ func (cf *ChangeFocus) Marshal() ([]byte, error) {
 // FocusRecieved from a peer
 // this message will be sent to the active client to inform them they now have focus
 type FocusRecieved struct {
-	X uint `msgpack:"x"`
-	Y uint `msgpack:"y"`
+	// ID of the transition zone that triggerd the focus
+	ID  uuid.UUID
+	Pos uint `msgpack:"x"`
 }
 
 var _ WsMessage = (*FocusRecieved)(nil)
@@ -102,5 +106,42 @@ func (fr *FocusRecieved) Marshal() ([]byte, error) {
 	}
 
 	base := []byte{byte(MsgTypeFocusRecieved), ';'}
+	return append(base, data...), nil
+}
+
+// ReleaseFocus from all peers
+// When this message is sent from any peer all peers will have their focus removed making all hid
+// devices operatie for their local client again
+type ReleaseFocus struct {
+}
+
+var _ WsMessage = (*ReleaseFocus)(nil)
+
+// Marshal FocusRecieved struct into a byte array for sending via websocket
+func (rf *ReleaseFocus) Marshal() ([]byte, error) {
+	data, err := msgpack.Marshal(rf)
+	if err != nil {
+		return nil, err
+	}
+
+	base := []byte{byte(MsgTypeFocusRecieved), ';'}
+	return append(base, data...), nil
+}
+
+// TransitionZoneAssigned will be sent to clients on connect and whenever
+// the global screen arrangement is updated, it is used to pass the new details
+// of their transition zones
+type TransitionZoneAssigned []transition.TransitionZone
+
+var _ WsMessage = (*TransitionZoneAssigned)(nil)
+
+// Marshal FocusRecieved struct into a byte array for sending via websocket
+func (tza TransitionZoneAssigned) Marshal() ([]byte, error) {
+	data, err := msgpack.Marshal(tza)
+	if err != nil {
+		return nil, err
+	}
+
+	base := []byte{byte(MsgTypeTrasitionAssigned), ';'}
 	return append(base, data...), nil
 }

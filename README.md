@@ -4,10 +4,12 @@ Share your input devices between multiple machines
 This is a work in progress and is in no way functional
 
 ## TODO
-- [ ] handle active client switching
+- [x] handle active client switching
+- [x] websocet server needs a total rewrite
 - [ ] implement transition zones
+- [ ] show/hide cursor as focus moves between peers
 - [ ] create up for arranging screens
-- [ ] websocet server needs a total rewrite
+- [ ] clean up my shitty code
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/holoplot/go-evdev"
 	"github.com/indeedhat/harmony/internal/common"
 )
 
@@ -25,6 +26,13 @@ type Device interface {
 	ID() string
 }
 
+type DevicePlus interface {
+	Device
+
+	// MoveCursor relative to its current position
+	MoveCursor(x, y int)
+}
+
 type DeviceManager struct {
 	// Events stream from grabbed devices to be consumed externally
 	Events chan *common.InputEvent
@@ -36,7 +44,7 @@ type DeviceManager struct {
 	// devices currently being watched
 	devices []Device
 	// virtual device used for incomming events from peers
-	virtualDev Device
+	virtualDev DevicePlus
 	mux        sync.Mutex
 	ctx        *common.Context
 }
@@ -151,6 +159,11 @@ func (dm *DeviceManager) Forget(newDev Device) {
 
 		dm.devices = append(dm.devices[:i], dm.devices[i+1:]...)
 	}
+}
+
+// MoveCursor relative to its current position
+func (dm *DeviceManager) MoveCursor(x, y int) {
+	dm.virtualDev.MoveCursor(x, y)
 }
 
 func (dm *DeviceManager) trackEvents(dev Device) {

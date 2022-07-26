@@ -1,5 +1,7 @@
 package transition
 
+import "github.com/google/uuid"
+
 type Direction uint8
 
 const (
@@ -10,12 +12,15 @@ const (
 )
 
 type TransitionZone struct {
+	// This wiss be passed between shared between the peers on both side of the TransitionZone
+	ID uuid.UUID
 	// X will always be the left most pixel of the zone
 	X int
 	// Y will always be the bottom most pixel of the zone
-	Y         int
-	Width     int
-	height    int
+	Y      int
+	Width  int
+	height int
+	// Direction of travel required to trigger the transition
 	Direction Direction
 }
 

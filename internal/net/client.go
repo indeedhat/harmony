@@ -10,14 +10,13 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 type Client struct {
 	// Events coming from the server
-	Events chan *common.InputEvent
+	Events chan []byte
 	// Input for events to be sent to the server
-	Input chan *common.InputEvent
+	Input chan common.WsMessage
 
 	ctx  *common.Context
 	ws   *websocket.Conn
@@ -35,8 +34,10 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string) (*Client, error) 
 	}
 
 	client := Client{
-		ctx: ctx,
-		ws:  ws,
+		ctx:    ctx,
+		ws:     ws,
+		Events: make(chan []byte),
+		Input:  make(chan common.WsMessage),
 	}
 
 	if err := client.sendConnect(); err != nil {
@@ -90,16 +91,7 @@ func (cnt *Client) readEventsFromServer() {
 			continue
 		}
 
-		if byte(data[0]) != byte(common.MsgTypeSHidEvent) {
-			continue
-		}
-
-		var msg common.InputEvent
-		if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
-			continue
-		}
-
-		cnt.Events <- &msg
+		cnt.Events <- data
 	}
 }
 

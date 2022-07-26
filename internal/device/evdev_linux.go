@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"syscall"
+	"time"
 
 	"github.com/holoplot/go-evdev"
 	"github.com/indeedhat/harmony/internal/common"
@@ -88,6 +90,40 @@ func (evd *EvdevDevice) ID() string {
 	return evd.dev.Path()
 }
 
+type EvdevDevicePlus struct {
+	EvdevDevice
+}
+
+var _ Device = (*EvdevDevicePlus)(nil)
+var _ DevicePlus = (*EvdevDevicePlus)(nil)
+
+// MoveCursor relative to its current position
+func (edp *EvdevDevicePlus) MoveCursor(x, y int) {
+	evTime := syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
+
+	// move x
+	edp.dev.WriteOne(&evdev.InputEvent{
+		Time:  evTime,
+		Type:  evdev.EV_REL,
+		Code:  evdev.REL_X,
+		Value: int32(x),
+	})
+	// move y
+	edp.dev.WriteOne(&evdev.InputEvent{
+		Time:  evTime,
+		Type:  evdev.EV_REL,
+		Code:  evdev.REL_Y,
+		Value: int32(y),
+	})
+	// sync
+	edp.dev.WriteOne(&evdev.InputEvent{
+		Time:  evTime,
+		Type:  evdev.EV_SYN,
+		Code:  evdev.SYN_REPORT,
+		Value: 0,
+	})
+}
+
 // FindObservableDevices thot have key or rel events
 func FindObservableDevices() (observable []Device) {
 	basePath := "/dev/input"
@@ -143,7 +179,7 @@ func isObservable(dev *evdev.InputDevice) bool {
 
 // CreateVirtualDevice that has as much mouse/keyboard capability as possible
 // This can be used to pipe all recieved events through on a client machine
-func CreateVirtualDevice() (Device, error) {
+func CreateVirtualDevice() (DevicePlus, error) {
 	dev, err := evdev.CreateDevice("harmony-virt", evdev.InputID{
 		BusType: 0x03,
 		Vendor:  0x4712,
