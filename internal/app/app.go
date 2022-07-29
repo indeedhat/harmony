@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
@@ -110,7 +111,29 @@ func (app *Harmony) handleServerEvent(data []byte) {
 			Log("app", "release focus")
 			app.dev.ReleaseAccess()
 			app.active = false
-			// TODO: move the cursor to the middle of the main monitor
+
+			cursorPos, err := app.vdu.CursorPos()
+			if err != nil {
+				return
+			}
+
+			displays, err := app.vdu.DisplayBounds()
+			if err != nil || len(displays) == 0 {
+				return
+			}
+
+			spew.Dump(displays)
+			desiredPos := common.Vector2{
+				X: displays[0].Position.X + displays[0].Width/2,
+				Y: displays[0].Position.Y + displays[0].Height/2,
+			}
+
+			diff := desiredPos.Sub(*cursorPos)
+			app.dev.MoveCursor(diff)
+
+			spew.Dump(cursorPos)
+			spew.Dump(desiredPos)
+			spew.Dump(diff)
 		}
 
 	case common.MsgTypeFocusRecieved:
@@ -121,15 +144,7 @@ func (app *Harmony) handleServerEvent(data []byte) {
 
 		Log("app", "focus recieved")
 		app.active = true
-		// TODO: calculate the desired
-		var x, y int
-		cursor, err := app.vdu.CursorPos()
-		if err != nil {
-			// no point in moving cursor if we dont know its current position
-			return
-		}
-
-		app.dev.MoveCursor(x-cursor.X, y-cursor.Y)
+		// TODO: calculate the desired pos
 
 	case common.MsgTypeTrasitionAssigned:
 		Log("app", "handling new transition zones")

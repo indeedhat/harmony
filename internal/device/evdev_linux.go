@@ -98,7 +98,7 @@ var _ Device = (*EvdevDevicePlus)(nil)
 var _ DevicePlus = (*EvdevDevicePlus)(nil)
 
 // MoveCursor relative to its current position
-func (edp *EvdevDevicePlus) MoveCursor(x, y int) {
+func (edp *EvdevDevicePlus) MoveCursor(move common.Vector2) {
 	evTime := syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
 
 	// move x
@@ -106,14 +106,14 @@ func (edp *EvdevDevicePlus) MoveCursor(x, y int) {
 		Time:  evTime,
 		Type:  evdev.EV_REL,
 		Code:  evdev.REL_X,
-		Value: int32(x),
+		Value: int32(move.X),
 	})
 	// move y
 	edp.dev.WriteOne(&evdev.InputEvent{
 		Time:  evTime,
 		Type:  evdev.EV_REL,
 		Code:  evdev.REL_Y,
-		Value: int32(y),
+		Value: int32(move.Y),
 	})
 	// sync
 	edp.dev.WriteOne(&evdev.InputEvent{

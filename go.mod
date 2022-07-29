@@ -3,13 +3,13 @@ module github.com/indeedhat/harmony
 go 1.18
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/foolin/goview v0.3.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/holoplot/go-evdev v0.0.0-20220614075353-5d439b104730
 	github.com/jezek/xgb v1.0.1
-	github.com/pkg/errors v0.9.1
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 )
 

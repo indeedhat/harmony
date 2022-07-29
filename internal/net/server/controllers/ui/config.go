@@ -23,6 +23,7 @@ func (ui *UI) Index() gin.HandlerFunc {
 	}
 
 	return func(ctx *gin.Context) {
+		// TODO: make this actually work from peer display config
 		groups := make([]DisplayGroup, 2)
 		for _, display := range ui.displays {
 			screen := common.DisplayBounds{

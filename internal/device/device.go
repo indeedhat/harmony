@@ -29,7 +29,7 @@ type DevicePlus interface {
 	Device
 
 	// MoveCursor relative to its current position
-	MoveCursor(x, y int)
+	MoveCursor(move common.Vector2)
 }
 
 type DeviceManager struct {
@@ -161,8 +161,8 @@ func (dm *DeviceManager) Forget(newDev Device) {
 }
 
 // MoveCursor relative to its current position
-func (dm *DeviceManager) MoveCursor(x, y int) {
-	dm.virtualDev.MoveCursor(x, y)
+func (dm *DeviceManager) MoveCursor(delta common.Vector2) {
+	dm.virtualDev.MoveCursor(delta)
 }
 
 func (dm *DeviceManager) trackEvents(dev Device) {
