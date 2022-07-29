@@ -12,7 +12,6 @@ import (
 	"github.com/indeedhat/harmony/internal/net"
 	"github.com/indeedhat/harmony/internal/net/discovery"
 	"github.com/indeedhat/harmony/internal/net/server/router"
-	"github.com/indeedhat/harmony/internal/transition"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -33,7 +32,7 @@ type Harmony struct {
 	// uuid to identify this peer over the network
 	uuid uuid.UUID
 	// transition zones are used to define screen edges that 'transition' to other peers
-	tZones []transition.TransitionZone
+	tZones []common.TransitionZone
 	// cache the times of the last n (config.AltEscapeCount) alt key up events
 	// if enough events happen in a specified time frame then all clients peers
 	// will be told to release focus and exclusive access locks on all devices

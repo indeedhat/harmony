@@ -1,4 +1,4 @@
-package transition
+package common
 
 import "github.com/google/uuid"
 
@@ -13,28 +13,23 @@ const (
 
 type TransitionZone struct {
 	// This wiss be passed between shared between the peers on both side of the TransitionZone
-	ID uuid.UUID
-	// X will always be the left most pixel of the zone
-	X int
-	// Y will always be the bottom most pixel of the zone
-	Y      int
-	Width  int
-	height int
+	ID     uuid.UUID
+	Bounds [2]Vector2
 	// Direction of travel required to trigger the transition
 	Direction Direction
 }
 
 // ShouldTransition calculates if the peer should transition foucs based on the defined zone
-func (tz *TransitionZone) ShouldTransition(x, y, deltaX, deltaY int) bool {
-	if x < tz.X || x > tz.X+tz.Width {
+func (zone *TransitionZone) ShouldTransition(x, y, deltaX, deltaY int) bool {
+	if x < zone.Bounds[0].X || x > zone.Bounds[1].X {
 		return false
 	}
 
-	if y < tz.Y || y > tz.Y+tz.Width {
+	if y < zone.Bounds[0].Y || y > zone.Bounds[1].Y {
 		return false
 	}
 
-	switch tz.Direction {
+	switch zone.Direction {
 	case Down:
 		return deltaY < 0
 	case Left:

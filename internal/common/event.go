@@ -4,7 +4,6 @@ import (
 	"syscall"
 
 	"github.com/google/uuid"
-	"github.com/indeedhat/harmony/internal/transition"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -22,7 +21,9 @@ const (
 // WsMessage interface describes any message/event that is transmissable
 // via the websocket connection
 type WsMessage interface {
+	// Marshal an event into a byte array using mesgpack
 	Marshal() ([]byte, error)
+	// String representation of the message type
 	String() string
 }
 
@@ -38,18 +39,12 @@ type InputEvent struct {
 }
 
 // Marshal ServerHidEvent struct into a byte array for sending via websocket
-func (ie *InputEvent) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(ie)
-	if err != nil {
-		return nil, err
-	}
-
-	base := []byte{byte(MsgTypeInputEvent), ';'}
-	return append(base, data...), nil
+func (ev *InputEvent) Marshal() ([]byte, error) {
+	return marshalEvent(ev, MsgTypeInputEvent)
 }
 
 // String gives the string name of the event type
-func (ie *InputEvent) String() string {
+func (ev *InputEvent) String() string {
 	return "InputEvent"
 }
 
@@ -59,21 +54,16 @@ var _ WsMessage = (*InputEvent)(nil)
 type ClientConnect struct {
 	Hostname string    `msgpack:"h"`
 	UUID     uuid.UUID `msgpack:"u"`
+	Displays []DisplayBounds
 }
 
 // Marshal ClientConnect struct into a byte array for sending via websocket
-func (cc *ClientConnect) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(cc)
-	if err != nil {
-		return nil, err
-	}
-
-	base := []byte{byte(MsgTypeConnect), ';'}
-	return append(base, data...), nil
+func (ev *ClientConnect) Marshal() ([]byte, error) {
+	return marshalEvent(ev, MsgTypeConnect)
 }
 
 // String gives the string name of the event type
-func (cc *ClientConnect) String() string {
+func (ev *ClientConnect) String() string {
 	return "ClientConnect"
 }
 
@@ -82,23 +72,16 @@ var _ WsMessage = (*ClientConnect)(nil)
 // ChangeFocus from the active client to a peer
 type ChangeFocus struct {
 	UUID uuid.UUID `msgpack:"u"`
-	X    uint      `msgpack:"x"`
-	Y    uint      `msgpack:"y"`
+	Pos  Vector2   `msgpack:"p"`
 }
 
 // Marshal ChangeFocus struct into a byte array for sending via websocket
-func (cf *ChangeFocus) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(cf)
-	if err != nil {
-		return nil, err
-	}
-
-	base := []byte{byte(MsgTypeChangeFoucs), ';'}
-	return append(base, data...), nil
+func (ev *ChangeFocus) Marshal() ([]byte, error) {
+	return marshalEvent(ev, MsgTypeChangeFoucs)
 }
 
 // String gives the string name of the event type
-func (cf *ChangeFocus) String() string {
+func (ev *ChangeFocus) String() string {
 	return "ChangeFocus"
 }
 
@@ -113,18 +96,12 @@ type FocusRecieved struct {
 }
 
 // Marshal FocusRecieved struct into a byte array for sending via websocket
-func (fr *FocusRecieved) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(fr)
-	if err != nil {
-		return nil, err
-	}
-
-	base := []byte{byte(MsgTypeFocusRecieved), ';'}
-	return append(base, data...), nil
+func (ev *FocusRecieved) Marshal() ([]byte, error) {
+	return marshalEvent(ev, MsgTypeFocusRecieved)
 }
 
 // String gives the string name of the event type
-func (fr *FocusRecieved) String() string {
+func (ev *FocusRecieved) String() string {
 	return "FocusRecieved"
 }
 
@@ -137,18 +114,12 @@ type ReleaseFocus struct {
 }
 
 // Marshal FocusRecieved struct into a byte array for sending via websocket
-func (rf *ReleaseFocus) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(rf)
-	if err != nil {
-		return nil, err
-	}
-
-	base := []byte{byte(MsgTypeReleaseFouces), ';'}
-	return append(base, data...), nil
+func (ev *ReleaseFocus) Marshal() ([]byte, error) {
+	return marshalEvent(ev, MsgTypeReleaseFouces)
 }
 
 // String gives the string name of the event type
-func (rf *ReleaseFocus) String() string {
+func (ev *ReleaseFocus) String() string {
 	return "ReleaseFocus"
 }
 
@@ -157,17 +128,11 @@ var _ WsMessage = (*ReleaseFocus)(nil)
 // TransitionZoneAssigned will be sent to clients on connect and whenever
 // the global screen arrangement is updated, it is used to pass the new details
 // of their transition zones
-type TransitionZoneAssigned []transition.TransitionZone
+type TransitionZoneAssigned []TransitionZone
 
 // Marshal FocusRecieved struct into a byte array for sending via websocket
-func (tza TransitionZoneAssigned) Marshal() ([]byte, error) {
-	data, err := msgpack.Marshal(tza)
-	if err != nil {
-		return nil, err
-	}
-
-	base := []byte{byte(MsgTypeTrasitionAssigned), ';'}
-	return append(base, data...), nil
+func (ev TransitionZoneAssigned) Marshal() ([]byte, error) {
+	return marshalEvent(ev, MsgTypeTrasitionAssigned)
 }
 
 // String gives the string name of the event type
@@ -176,3 +141,13 @@ func (tza *TransitionZoneAssigned) String() string {
 }
 
 var _ WsMessage = (*TransitionZoneAssigned)(nil)
+
+func marshalEvent(ev any, typ MsgType) ([]byte, error) {
+	data, err := msgpack.Marshal(ev)
+	if err != nil {
+		return nil, err
+	}
+
+	base := []byte{byte(typ), ';'}
+	return append(base, data...), nil
+}

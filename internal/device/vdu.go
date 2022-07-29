@@ -1,25 +1,12 @@
 package device
 
-// DisplayBounds provides a common return type for displays
-// regardless of platform
-type DisplayBounds struct {
-	X      int
-	Y      int
-	Width  int
-	Height int
-}
-
-// Cursor represents the current coordinates of the cursor
-type Cursor struct {
-	X int
-	Y int
-}
+import "github.com/indeedhat/harmony/internal/common"
 
 // Vdu provides a common interface for interacting with system dependent display managers
 type Vdu interface {
 	Close() error
-	CursorPos() (*Cursor, error)
-	DisplayBounds() ([]DisplayBounds, error)
+	CursorPos() (*common.Vector2, error)
+	DisplayBounds() ([]common.DisplayBounds, error)
 	HideCursor() error
 	ShowCursor() error
 }

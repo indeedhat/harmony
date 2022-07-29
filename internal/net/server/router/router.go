@@ -6,13 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/indeedhat/harmony/internal/common"
-	"github.com/indeedhat/harmony/internal/device"
 	"github.com/indeedhat/harmony/internal/net/server/controllers/socket"
 	"github.com/indeedhat/harmony/internal/net/server/controllers/ui"
 )
 
 // New UI controller group
-func New(ctx *common.Context, serverUUID uuid.UUID, displays []device.DisplayBounds) *gin.Engine {
+func New(ctx *common.Context, serverUUID uuid.UUID, displays []common.DisplayBounds) *gin.Engine {
 	router := gin.Default()
 
 	_ = ui.New(router, displays)

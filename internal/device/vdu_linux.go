@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/indeedhat/harmony/internal/common"
 	"github.com/jezek/xgb"
 	"github.com/jezek/xgb/xfixes"
 	"github.com/jezek/xgb/xinerama"
 	"github.com/jezek/xgb/xproto"
 )
-
-var _ Vdu = (*X11Vdu)(nil)
 
 // X11Vdu provides common x11 display intergrations
 type X11Vdu struct {
@@ -48,20 +47,22 @@ func (x11 X11Vdu) Close() error {
 }
 
 // DisplayBounds gets the bounds of the currently connected displays
-func (x11 X11Vdu) DisplayBounds() ([]DisplayBounds, error) {
+func (x11 X11Vdu) DisplayBounds() ([]common.DisplayBounds, error) {
 	screens, err := xinerama.QueryScreens(x11.xcon).Reply()
 	if err != nil {
 		return nil, fmt.Errorf("failed to query screens: %w", err)
 	}
 
 	count := int(screens.Number)
-	displays := make([]DisplayBounds, 0, count)
+	displays := make([]common.DisplayBounds, 0, count)
 
 	for i := 0; i < count; i++ {
 		screen := screens.ScreenInfo[i]
-		displays = append(displays, DisplayBounds{
-			X:      int(screen.XOrg),
-			Y:      int(screen.YOrg),
+		displays = append(displays, common.DisplayBounds{
+			Position: common.Vector2{
+				X: int(screen.XOrg),
+				Y: int(screen.YOrg),
+			},
 			Width:  int(screen.Width),
 			Height: int(screen.Height),
 		})
@@ -71,13 +72,13 @@ func (x11 X11Vdu) DisplayBounds() ([]DisplayBounds, error) {
 }
 
 // CursorPos gets the current coords of the cursor
-func (x11 X11Vdu) CursorPos() (*Cursor, error) {
+func (x11 X11Vdu) CursorPos() (*common.Vector2, error) {
 	resp, err := xproto.QueryPointer(x11.xcon, x11.window).Reply()
 	if err != nil {
 		return nil, fmt.Errorf("failed to query cursor pos: %w", err)
 	}
 
-	return &Cursor{
+	return &common.Vector2{
 		X: int(resp.RootX),
 		Y: int(resp.RootY),
 	}, nil
@@ -94,3 +95,5 @@ func (x11 X11Vdu) ShowCursor() error {
 	return xfixes.ShowCursorChecked(x11.xcon, x11.window).
 		Check()
 }
+
+var _ Vdu = (*X11Vdu)(nil)
