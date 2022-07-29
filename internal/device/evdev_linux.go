@@ -774,5 +774,5 @@ func CreateVirtualDevice() (DevicePlus, error) {
 		return nil, err
 	}
 
-	return &EvdevDevice{dev}, nil
+	return &EvdevDevicePlus{EvdevDevice{dev}}, nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/holoplot/go-evdev"
 	"github.com/indeedhat/harmony/internal/common"
 )
 

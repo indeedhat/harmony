@@ -3,11 +3,11 @@ package discovery
 import (
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
+	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -45,38 +45,41 @@ type Service struct {
 	ctx   *common.Context
 	addr  *net.UDPAddr
 	con   *net.UDPConn
-	wg    sync.WaitGroup
 }
 
 // New creates a new instance of the Sirvice struct
 // Service is used to handle udp multicast for peer discovery and master negotiations
 func New(ctx *common.Context) (*Service, error) {
+	Log("discovery", "resolving address")
 	addr, err := net.ResolveUDPAddr("udp4", config.MulticastAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve udp address")
 	}
 
+	Log("discovery", "starting listener")
 	conn, err := net.ListenMulticastUDP("udp4", nil, addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to cennect to multicast address: %w", err)
 	}
 
 	return &Service{
-		state: stateDiscovery,
-		ctx:   ctx,
-		addr:  addr,
-		con:   conn,
+		Server: make(chan Server),
+		state:  stateDiscovery,
+		ctx:    ctx,
+		addr:   addr,
+		con:    conn,
 	}, nil
 }
 
 // Run the discovery service
 func (svc *Service) Run() {
-	svc.wg.Add(1)
-
 	go svc.discover()
 	go svc.listen()
+}
 
-	svc.wg.Wait()
+// Close the discovery service
+func (svc *Service) Close() {
+	svc.con.Close()
 }
 
 // discover peers running in server mode
@@ -89,6 +92,7 @@ func (svc *Service) discover() {
 	for {
 		select {
 		case <-svc.ctx.Done():
+			Log("discovery", "shutting down")
 			return
 
 		case <-ticker.C:
@@ -97,6 +101,7 @@ func (svc *Service) discover() {
 			}
 
 			if pollCount >= config.DiscoveryPollCount {
+				Log("discovery", "poll limit reached, requesting server start")
 				svc.state = stateServer
 				svc.Server <- Server{}
 				return
@@ -116,8 +121,6 @@ func (svc *Service) discover() {
 
 // listen for messages from peers and respond appropriately
 func (svc *Service) listen() {
-	defer svc.wg.Done()
-
 	for {
 		buf := make([]byte, 14)
 		_, addr, err := svc.con.ReadFromUDP(buf)
@@ -136,7 +139,8 @@ func (svc *Service) listen() {
 				continue
 			}
 
-			svc.state = stateDiscovery
+			Log("discovery", "server found")
+			svc.state = statePeer
 			svc.Server <- Server{
 				IpAddress: addr.IP.String(),
 				Port:      msg.ServerPort,
@@ -153,6 +157,7 @@ func (svc *Service) listen() {
 				continue
 			}
 
+			Log("discovery", "responding to peer discovery request")
 			svc.con.WriteToUDP(data, svc.addr)
 		}
 	}

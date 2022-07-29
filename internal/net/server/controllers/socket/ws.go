@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
+	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -36,8 +37,11 @@ func (soc *Socket) Ws() gin.HandlerFunc {
 
 // broadcast a message to all active clients
 func (soc *Socket) broadcast(msg common.WsMessage) {
+	Logf("server", "broadcast: %s", msg)
+
 	data, err := msg.Marshal()
 	if err != nil {
+		Logf("server", "broadcast marshal failure: %s", err)
 		return
 	}
 
@@ -89,6 +93,7 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 		// handle events
 		switch common.MsgType(data[0]) {
 		case common.MsgTypeConnect:
+			Log("server", "client connect")
 			var msg common.ClientConnect
 
 			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
@@ -100,10 +105,6 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 			conUUID = &msg.UUID
 
 		case common.MsgTypeInputEvent:
-			if conUUID == nil {
-				continue
-			}
-
 			if soc.activeClient == nil {
 				continue
 			}
@@ -114,6 +115,7 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 			}
 
 		case common.MsgTypeChangeFoucs:
+			Log("server", "change focus")
 			if conUUID != soc.activeClient {
 				continue
 			}
@@ -136,8 +138,12 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 			}
 
 		case common.MsgTypeReleaseFouces:
+			Log("server", "release focus")
 			soc.activeClient = nil
 			soc.broadcast(&common.ReleaseFocus{})
+
+		default:
+			Logf("server", "unknown message type: %s", data[0])
 		}
 	}
 }

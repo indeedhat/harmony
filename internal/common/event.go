@@ -23,6 +23,7 @@ const (
 // via the websocket connection
 type WsMessage interface {
 	Marshal() ([]byte, error)
+	String() string
 }
 
 // InputEvent provides a system independent format for transfering
@@ -36,8 +37,6 @@ type InputEvent struct {
 	Value int32           `msgpack:"v"`
 }
 
-var _ WsMessage = (*InputEvent)(nil)
-
 // Marshal ServerHidEvent struct into a byte array for sending via websocket
 func (ie *InputEvent) Marshal() ([]byte, error) {
 	data, err := msgpack.Marshal(ie)
@@ -49,13 +48,18 @@ func (ie *InputEvent) Marshal() ([]byte, error) {
 	return append(base, data...), nil
 }
 
+// String gives the string name of the event type
+func (ie *InputEvent) String() string {
+	return "InputEvent"
+}
+
+var _ WsMessage = (*InputEvent)(nil)
+
 // ClientConnect is sent from the client on connect to inform the server about itself
 type ClientConnect struct {
 	Hostname string    `msgpack:"h"`
 	UUID     uuid.UUID `msgpack:"u"`
 }
-
-var _ WsMessage = (*ClientConnect)(nil)
 
 // Marshal ClientConnect struct into a byte array for sending via websocket
 func (cc *ClientConnect) Marshal() ([]byte, error) {
@@ -68,14 +72,19 @@ func (cc *ClientConnect) Marshal() ([]byte, error) {
 	return append(base, data...), nil
 }
 
+// String gives the string name of the event type
+func (cc *ClientConnect) String() string {
+	return "ClientConnect"
+}
+
+var _ WsMessage = (*ClientConnect)(nil)
+
 // ChangeFocus from the active client to a peer
 type ChangeFocus struct {
 	UUID uuid.UUID `msgpack:"u"`
 	X    uint      `msgpack:"x"`
 	Y    uint      `msgpack:"y"`
 }
-
-var _ WsMessage = (*ChangeFocus)(nil)
 
 // Marshal ChangeFocus struct into a byte array for sending via websocket
 func (cf *ChangeFocus) Marshal() ([]byte, error) {
@@ -88,6 +97,13 @@ func (cf *ChangeFocus) Marshal() ([]byte, error) {
 	return append(base, data...), nil
 }
 
+// String gives the string name of the event type
+func (cf *ChangeFocus) String() string {
+	return "ChangeFocus"
+}
+
+var _ WsMessage = (*ChangeFocus)(nil)
+
 // FocusRecieved from a peer
 // this message will be sent to the active client to inform them they now have focus
 type FocusRecieved struct {
@@ -95,8 +111,6 @@ type FocusRecieved struct {
 	ID  uuid.UUID
 	Pos uint `msgpack:"x"`
 }
-
-var _ WsMessage = (*FocusRecieved)(nil)
 
 // Marshal FocusRecieved struct into a byte array for sending via websocket
 func (fr *FocusRecieved) Marshal() ([]byte, error) {
@@ -109,13 +123,18 @@ func (fr *FocusRecieved) Marshal() ([]byte, error) {
 	return append(base, data...), nil
 }
 
+// String gives the string name of the event type
+func (fr *FocusRecieved) String() string {
+	return "FocusRecieved"
+}
+
+var _ WsMessage = (*FocusRecieved)(nil)
+
 // ReleaseFocus from all peers
 // When this message is sent from any peer all peers will have their focus removed making all hid
 // devices operatie for their local client again
 type ReleaseFocus struct {
 }
-
-var _ WsMessage = (*ReleaseFocus)(nil)
 
 // Marshal FocusRecieved struct into a byte array for sending via websocket
 func (rf *ReleaseFocus) Marshal() ([]byte, error) {
@@ -124,16 +143,21 @@ func (rf *ReleaseFocus) Marshal() ([]byte, error) {
 		return nil, err
 	}
 
-	base := []byte{byte(MsgTypeFocusRecieved), ';'}
+	base := []byte{byte(MsgTypeReleaseFouces), ';'}
 	return append(base, data...), nil
 }
+
+// String gives the string name of the event type
+func (rf *ReleaseFocus) String() string {
+	return "ReleaseFocus"
+}
+
+var _ WsMessage = (*ReleaseFocus)(nil)
 
 // TransitionZoneAssigned will be sent to clients on connect and whenever
 // the global screen arrangement is updated, it is used to pass the new details
 // of their transition zones
 type TransitionZoneAssigned []transition.TransitionZone
-
-var _ WsMessage = (*TransitionZoneAssigned)(nil)
 
 // Marshal FocusRecieved struct into a byte array for sending via websocket
 func (tza TransitionZoneAssigned) Marshal() ([]byte, error) {
@@ -145,3 +169,10 @@ func (tza TransitionZoneAssigned) Marshal() ([]byte, error) {
 	base := []byte{byte(MsgTypeTrasitionAssigned), ';'}
 	return append(base, data...), nil
 }
+
+// String gives the string name of the event type
+func (tza *TransitionZoneAssigned) String() string {
+	return "TransitionZoneAssigned"
+}
+
+var _ WsMessage = (*TransitionZoneAssigned)(nil)

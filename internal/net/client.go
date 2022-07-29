@@ -105,7 +105,7 @@ func (cnt *Client) handleIncommingEvents() {
 
 		case ev := <-cnt.Input:
 			data, err := ev.Marshal()
-			if err != nil {
+			if err == nil {
 				cnt.ws.WriteMessage(websocket.BinaryMessage, data)
 			}
 		}
