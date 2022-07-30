@@ -5,13 +5,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/screens"
 )
 
 type Socket struct {
-	appCtx       *common.Context
-	clients      map[uuid.UUID]*websocket.Conn
-	activeClient *uuid.UUID
-	serverUUID   uuid.UUID
+	appCtx        *common.Context
+	clients       map[uuid.UUID]*websocket.Conn
+	activeClient  *uuid.UUID
+	serverUUID    uuid.UUID
+	screenManager *screens.ScreenManager
 }
 
 // New UI controller
@@ -20,6 +22,7 @@ func New(ctx *common.Context, serverUUID uuid.UUID, router *gin.Engine) *Socket 
 		appCtx:     ctx,
 		clients:    make(map[uuid.UUID]*websocket.Conn),
 		serverUUID: serverUUID,
+        screenManager: screens.NewScreenManager(),
 	}
 
 	socket.routes(router)

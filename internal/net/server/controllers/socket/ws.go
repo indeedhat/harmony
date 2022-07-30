@@ -13,6 +13,7 @@ import (
 	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/events"
 	. "github.com/indeedhat/harmony/internal/logger"
+	"github.com/indeedhat/harmony/internal/screens"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -63,18 +64,7 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 	})
 
 	var conUUID *uuid.UUID
-	defer func() {
-		if conUUID == nil {
-			return
-		}
-
-		delete(soc.clients, *conUUID)
-		if soc.activeClient == conUUID {
-			soc.activeClient = nil
-		}
-
-		soc.broadcast(&events.ReleaseFocus{})
-	}()
+	defer soc.handleDisconnect(conUUID)
 
 	for {
 		messageType, data, err := ws.ReadMessage()
@@ -94,57 +84,115 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 		// handle events
 		switch events.MsgType(data[0]) {
 		case events.MsgTypeConnect:
-			Log("server", "client connect")
-			var msg events.ClientConnect
-
-			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
-				log.Print("ws: failed to unmarshal message")
-				continue
-			}
-
-			soc.clients[msg.UUID] = ws
-			conUUID = &msg.UUID
+			conUUID = soc.handleConnect(ws, data)
 
 		case events.MsgTypeInputEvent:
-			if soc.activeClient == nil {
-				continue
-			}
-
-			var msg events.InputEvent
-			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
-				log.Print("ws: failed to unmarshal message")
-			}
+			soc.handleInputEvent(data)
 
 		case events.MsgTypeChangeFoucs:
-			Log("server", "change focus")
-			if conUUID != soc.activeClient {
-				continue
-			}
-
-			var msg events.ChangeFocus
-			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
-				log.Print("ws: failed to unmarshal message")
-			}
-
-			if _, ok := soc.clients[msg.UUID]; !ok {
-				continue
-			}
-
-			soc.activeClient = &msg.UUID
-
-			recMessage := events.FocusRecieved{}
-			data, err := recMessage.Marshal()
-			if err == nil {
-				soc.clients[msg.UUID].WriteMessage(websocket.BinaryMessage, data)
-			}
+			soc.handleChangeFocus(conUUID, data)
 
 		case events.MsgTypeReleaseFouces:
-			Log("server", "release focus")
-			soc.activeClient = nil
-			soc.broadcast(&events.ReleaseFocus{})
+			soc.handleReleaseFocus()
 
 		default:
 			Logf("server", "unknown message type: %s", data[0])
+		}
+	}
+}
+
+func (soc *Socket) handleDisconnect(conUUID *uuid.UUID) {
+	if conUUID == nil {
+		return
+	}
+
+	delete(soc.clients, *conUUID)
+
+	if soc.activeClient == conUUID {
+		soc.activeClient = nil
+		soc.broadcast(&events.ReleaseFocus{})
+	}
+
+	zones := soc.screenManager.RemovePeer(*conUUID)
+	soc.distributeTransitionZones(zones)
+}
+
+func (soc *Socket) handleReleaseFocus() {
+	Log("server", "release focus")
+	soc.activeClient = nil
+	soc.broadcast(&events.ReleaseFocus{})
+}
+
+func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
+	Log("server", "change focus")
+	if conUUID != soc.activeClient {
+		return
+	}
+
+	var msg events.ChangeFocus
+	if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
+		log.Print("ws: failed to unmarshal message")
+	}
+
+	if _, ok := soc.clients[msg.UUID]; !ok {
+		return
+	}
+
+	soc.activeClient = &msg.UUID
+
+	recMessage := events.FocusRecieved{}
+	data, err := recMessage.Marshal()
+	if err == nil {
+		soc.clients[msg.UUID].WriteMessage(websocket.BinaryMessage, data)
+	}
+}
+
+func (soc *Socket) handleInputEvent(data []byte) {
+	if soc.activeClient == nil {
+		return
+	}
+
+	var msg events.InputEvent
+	if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
+		log.Print("ws: failed to unmarshal message")
+	}
+
+	client, ok := soc.clients[*soc.activeClient]
+	if !ok {
+		return
+	}
+
+	client.WriteMessage(websocket.BinaryMessage, data)
+}
+
+func (soc *Socket) handleConnect(ws *websocket.Conn, data []byte) *uuid.UUID {
+	Log("server", "client connect")
+	var msg events.ClientConnect
+
+	if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
+		return nil
+	}
+
+	soc.clients[msg.UUID] = ws
+
+	zones := soc.screenManager.AddPeer(msg.UUID, msg.Displays)
+	soc.distributeTransitionZones(zones)
+
+	return &msg.UUID
+}
+
+func (soc *Socket) distributeTransitionZones(zones map[uuid.UUID][]screens.TransitionZone) {
+	// send updated transition zones
+	for id, zones := range zones {
+		con, ok := soc.clients[id]
+		if !ok {
+			continue
+		}
+
+		tzMessage := events.TransitionZoneAssigned(zones)
+		data, err := tzMessage.Marshal()
+		if err == nil {
+			con.WriteMessage(websocket.BinaryMessage, data)
 		}
 	}
 }
