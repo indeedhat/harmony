@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/screens"
 )
 
 // Index controller
@@ -12,7 +13,7 @@ func (ui *UI) Index() gin.HandlerFunc {
 	type DisplayGroup struct {
 		Width    int
 		Height   int
-		Displays []common.DisplayBounds
+		Displays []screens.DisplayBounds
 	}
 
 	max := func(a, b int) int {
@@ -26,7 +27,7 @@ func (ui *UI) Index() gin.HandlerFunc {
 		// TODO: make this actually work from peer display config
 		groups := make([]DisplayGroup, 2)
 		for _, display := range ui.displays {
-			screen := common.DisplayBounds{
+			screen := screens.DisplayBounds{
 				Position: common.Vector2{
 					X: display.Position.X / 4,
 					Y: display.Position.Y / 4,

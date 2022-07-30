@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
+	"github.com/indeedhat/harmony/internal/events"
 	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -36,7 +37,7 @@ func (soc *Socket) Ws() gin.HandlerFunc {
 }
 
 // broadcast a message to all active clients
-func (soc *Socket) broadcast(msg common.WsMessage) {
+func (soc *Socket) broadcast(msg events.WsMessage) {
 	Logf("server", "broadcast: %s", msg)
 
 	data, err := msg.Marshal()
@@ -72,7 +73,7 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 			soc.activeClient = nil
 		}
 
-		soc.broadcast(&common.ReleaseFocus{})
+		soc.broadcast(&events.ReleaseFocus{})
 	}()
 
 	for {
@@ -86,15 +87,15 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 		}
 
 		// only allow connect messages until the uuid is set
-		if conUUID == nil && data[0] != byte(common.MsgTypeConnect) {
+		if conUUID == nil && data[0] != byte(events.MsgTypeConnect) {
 			continue
 		}
 
 		// handle events
-		switch common.MsgType(data[0]) {
-		case common.MsgTypeConnect:
+		switch events.MsgType(data[0]) {
+		case events.MsgTypeConnect:
 			Log("server", "client connect")
-			var msg common.ClientConnect
+			var msg events.ClientConnect
 
 			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
 				log.Print("ws: failed to unmarshal message")
@@ -104,23 +105,23 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 			soc.clients[msg.UUID] = ws
 			conUUID = &msg.UUID
 
-		case common.MsgTypeInputEvent:
+		case events.MsgTypeInputEvent:
 			if soc.activeClient == nil {
 				continue
 			}
 
-			var msg common.InputEvent
+			var msg events.InputEvent
 			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
 				log.Print("ws: failed to unmarshal message")
 			}
 
-		case common.MsgTypeChangeFoucs:
+		case events.MsgTypeChangeFoucs:
 			Log("server", "change focus")
 			if conUUID != soc.activeClient {
 				continue
 			}
 
-			var msg common.ChangeFocus
+			var msg events.ChangeFocus
 			if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
 				log.Print("ws: failed to unmarshal message")
 			}
@@ -131,16 +132,16 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 
 			soc.activeClient = &msg.UUID
 
-			recMessage := common.FocusRecieved{}
+			recMessage := events.FocusRecieved{}
 			data, err := recMessage.Marshal()
 			if err == nil {
 				soc.clients[msg.UUID].WriteMessage(websocket.BinaryMessage, data)
 			}
 
-		case common.MsgTypeReleaseFouces:
+		case events.MsgTypeReleaseFouces:
 			Log("server", "release focus")
 			soc.activeClient = nil
-			soc.broadcast(&common.ReleaseFocus{})
+			soc.broadcast(&events.ReleaseFocus{})
 
 		default:
 			Logf("server", "unknown message type: %s", data[0])

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/screens"
 	"github.com/jezek/xgb"
 	"github.com/jezek/xgb/xfixes"
 	"github.com/jezek/xgb/xinerama"
@@ -47,18 +48,18 @@ func (x11 X11Vdu) Close() error {
 }
 
 // DisplayBounds gets the bounds of the currently connected displays
-func (x11 X11Vdu) DisplayBounds() ([]common.DisplayBounds, error) {
-	screens, err := xinerama.QueryScreens(x11.xcon).Reply()
+func (x11 X11Vdu) DisplayBounds() ([]screens.DisplayBounds, error) {
+	screenData, err := xinerama.QueryScreens(x11.xcon).Reply()
 	if err != nil {
 		return nil, fmt.Errorf("failed to query screens: %w", err)
 	}
 
-	count := int(screens.Number)
-	displays := make([]common.DisplayBounds, 0, count)
+	count := int(screenData.Number)
+	displays := make([]screens.DisplayBounds, 0, count)
 
 	for i := 0; i < count; i++ {
-		screen := screens.ScreenInfo[i]
-		displays = append(displays, common.DisplayBounds{
+		screen := screenData.ScreenInfo[i]
+		displays = append(displays, screens.DisplayBounds{
 			Position: common.Vector2{
 				X: int(screen.XOrg),
 				Y: int(screen.YOrg),

@@ -9,11 +9,12 @@ import (
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/device"
+	"github.com/indeedhat/harmony/internal/events"
 	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/indeedhat/harmony/internal/net"
 	"github.com/indeedhat/harmony/internal/net/discovery"
 	"github.com/indeedhat/harmony/internal/net/server/router"
-	"github.com/vmihailenco/msgpack/v5"
+	"github.com/indeedhat/harmony/internal/screens"
 )
 
 type Harmony struct {
@@ -33,7 +34,7 @@ type Harmony struct {
 	// uuid to identify this peer over the network
 	uuid uuid.UUID
 	// transition zones are used to define screen edges that 'transition' to other peers
-	tZones []common.TransitionZone
+	tZones []screens.TransitionZone
 	// cache the times of the last n (config.AltEscapeCount) alt key up events
 	// if enough events happen in a specified time frame then all clients peers
 	// will be told to release focus and exclusive access locks on all devices
@@ -98,16 +99,16 @@ func (app *Harmony) Run() error {
 }
 
 func (app *Harmony) handleServerEvent(data []byte) {
-	switch common.MsgType(data[0]) {
-	case common.MsgTypeInputEvent:
-		if event := unmarshalEvent[common.InputEvent](data[2:]); event != nil {
+	switch events.MsgType(data[0]) {
+	case events.MsgTypeInputEvent:
+		if event := events.Unmarshal[events.InputEvent](data[2:]); event != nil {
 			app.dev.Input <- event
 		}
 
-	case common.MsgTypeReleaseFouces:
+	case events.MsgTypeReleaseFouces:
 		Log("app", "handling release focus")
 
-		if event := unmarshalEvent[common.ReleaseFocus](data[2:]); event != nil {
+		if event := events.Unmarshal[events.ReleaseFocus](data[2:]); event != nil {
 			Log("app", "release focus")
 			app.dev.ReleaseAccess()
 			app.active = false
@@ -136,9 +137,9 @@ func (app *Harmony) handleServerEvent(data []byte) {
 			spew.Dump(diff)
 		}
 
-	case common.MsgTypeFocusRecieved:
+	case events.MsgTypeFocusRecieved:
 		Log("app", "handling focus recieved")
-		if event := unmarshalEvent[common.FocusRecieved](data[2:]); event == nil {
+		if event := events.Unmarshal[events.FocusRecieved](data[2:]); event == nil {
 			return
 		}
 
@@ -146,9 +147,9 @@ func (app *Harmony) handleServerEvent(data []byte) {
 		app.active = true
 		// TODO: calculate the desired pos
 
-	case common.MsgTypeTrasitionAssigned:
+	case events.MsgTypeTrasitionAssigned:
 		Log("app", "handling new transition zones")
-		if event := unmarshalEvent[common.TransitionZoneAssigned](data[2:]); event != nil {
+		if event := events.Unmarshal[events.TransitionZoneAssigned](data[2:]); event != nil {
 			Log("app", "recieved new transition zones")
 			app.tZones = *event
 		}
@@ -168,7 +169,7 @@ func (app *Harmony) handleDiscoveryMessage(server discovery.Server) error {
 	return app.startClient(server.IpAddress)
 }
 
-func (app *Harmony) handleInputEvent(event *common.InputEvent) {
+func (app *Harmony) handleInputEvent(event *events.InputEvent) {
 	app.handleEmergancyRelease(event)
 	if !app.active {
 		return
@@ -177,7 +178,7 @@ func (app *Harmony) handleInputEvent(event *common.InputEvent) {
 	app.client.Input <- event
 }
 
-func (app *Harmony) handleEmergancyRelease(event *common.InputEvent) {
+func (app *Harmony) handleEmergancyRelease(event *events.InputEvent) {
 	if !device.IsAltUpEvent(event) {
 		return
 	}
@@ -197,7 +198,7 @@ func (app *Harmony) handleEmergancyRelease(event *common.InputEvent) {
 	if diff <= time.Second*config.AltEscapeTimeframe {
 		Log("app", "emergancy release")
 		app.altCache = []time.Time{}
-		app.client.Input <- &common.ReleaseFocus{}
+		app.client.Input <- &events.ReleaseFocus{}
 	}
 }
 
@@ -222,21 +223,16 @@ func (app *Harmony) startClient(ip string) error {
 		ip = "127.0.0.1"
 	}
 
-	client, err := net.NewClient(app.ctx, app.uuid, ip)
+	screens, err := app.vdu.DisplayBounds()
+	if err != nil {
+		return err
+	}
+
+	client, err := net.NewClient(app.ctx, app.uuid, ip, screens)
 	if err != nil {
 		return err
 	}
 
 	app.client = client
 	return nil
-}
-
-func unmarshalEvent[T any](data []byte) *T {
-	var event T
-
-	if err := msgpack.Unmarshal(data, &event); err != nil {
-		return nil
-	}
-
-	return &event
 }

@@ -1,6 +1,9 @@
-package common
+package screens
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/indeedhat/harmony/internal/common"
+)
 
 type Direction uint8
 
@@ -14,7 +17,7 @@ const (
 type TransitionZone struct {
 	// This wiss be passed between shared between the peers on both side of the TransitionZone
 	ID     uuid.UUID
-	Bounds [2]Vector2
+	Bounds [2]common.Vector2
 	// Direction of travel required to trigger the transition
 	Direction Direction
 }

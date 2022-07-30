@@ -8,10 +8,11 @@ import (
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/net/server/controllers/socket"
 	"github.com/indeedhat/harmony/internal/net/server/controllers/ui"
+	"github.com/indeedhat/harmony/internal/screens"
 )
 
 // New UI controller group
-func New(ctx *common.Context, serverUUID uuid.UUID, displays []common.DisplayBounds) *gin.Engine {
+func New(ctx *common.Context, serverUUID uuid.UUID, displays []screens.DisplayBounds) *gin.Engine {
 	router := gin.Default()
 
 	_ = ui.New(router, displays)

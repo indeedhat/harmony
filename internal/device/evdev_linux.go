@@ -9,6 +9,7 @@ import (
 
 	"github.com/holoplot/go-evdev"
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/events"
 )
 
 var _ Device = (*EvdevDevice)(nil)
@@ -19,13 +20,13 @@ type EvdevDevice struct {
 
 // Read an event from the device
 // this will block until an event happens or the device is closed
-func (evd *EvdevDevice) Read() (*common.InputEvent, error) {
+func (evd *EvdevDevice) Read() (*events.InputEvent, error) {
 	event, err := evd.dev.ReadOne()
 	if err != nil {
 		return nil, err
 	}
 
-	return &common.InputEvent{
+	return &events.InputEvent{
 		Time:  event.Time,
 		Type:  uint16(event.Type),
 		Code:  uint16(event.Code),
@@ -34,7 +35,7 @@ func (evd *EvdevDevice) Read() (*common.InputEvent, error) {
 }
 
 // Write an event to the device
-func (evd *EvdevDevice) Write(event *common.InputEvent) error {
+func (evd *EvdevDevice) Write(event *events.InputEvent) error {
 	return evd.dev.WriteOne(&evdev.InputEvent{
 		Time:  event.Time,
 		Type:  evdev.EvType(event.Type),

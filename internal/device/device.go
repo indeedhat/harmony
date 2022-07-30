@@ -6,13 +6,14 @@ import (
 	"sync"
 
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/events"
 )
 
 type Device interface {
 	// Read an input event from the device
-	Read() (*common.InputEvent, error)
+	Read() (*events.InputEvent, error)
 	// Write an input event to the device
-	Write(*common.InputEvent) error
+	Write(*events.InputEvent) error
 	// Grab exclisive accell to device
 	Grab() error
 	// Release exclusive access on the device
@@ -34,9 +35,9 @@ type DevicePlus interface {
 
 type DeviceManager struct {
 	// Events stream from grabbed devices to be consumed externally
-	Events chan *common.InputEvent
+	Events chan *events.InputEvent
 	// Input events from external server to be passed to the vdev
-	Input chan *common.InputEvent
+	Input chan *events.InputEvent
 
 	// grabbed state of watched devices
 	grabbed bool
@@ -61,8 +62,8 @@ func NewDeviceManager(ctx *common.Context) (*DeviceManager, error) {
 	}
 
 	dm := &DeviceManager{
-		Events: make(chan *common.InputEvent),
-		Input:  make(chan *common.InputEvent),
+		Events: make(chan *events.InputEvent),
+		Input:  make(chan *events.InputEvent),
 
 		ctx:        ctx,
 		devices:    devices,
