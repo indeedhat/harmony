@@ -15,16 +15,15 @@ it is lacking a lot of functionality and is still a buggy mess
 - [ ] restart peer discovery on connection lost
 - [ ] handle case where multiple servers are spun up on the same network
 - [ ] allow multiple setups to runn independently on the same network (currently all instances will join the same cluster)
-- [ ] add more logging
 - [ ] create ui for arranging screens
 - [ ] config file for common settings
 - [ ] clean up my shitty code
+- [ ] write logs to file by default with option to print
 
 ## Known Bugs
 - [ ] if peer connects too fast after server startup transition zones are assigend incorrectly
 - [ ] peer disconnect is not always handled properly
 - [ ] release events are not always sent to all peers
-- [ ] server sometimes crashes for ~seemingly no reason~ concurrent writes
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
