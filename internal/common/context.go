@@ -3,6 +3,8 @@ package common
 import (
 	"sync"
 	"sync/atomic"
+
+	"github.com/indeedhat/harmony/internal/config"
 )
 
 // closedchan is a reusable closed channel.
@@ -20,11 +22,14 @@ type Context struct {
 	done     atomic.Value
 	doneMu   sync.Mutex
 	canceled bool
+	Config   *config.Config
 }
 
 // NewContext constructor
-func NewContext() *Context {
-	return &Context{}
+func NewContext(conf *config.Config) *Context {
+	return &Context{
+		Config: conf,
+	}
 }
 
 // Done returns a chan if the context is canceled

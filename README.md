@@ -12,11 +12,11 @@ it is lacking a lot of functionality and is still a buggy mess
 - [x] release all peers on tripple alt
 - [x] show/hide cursor as focus moves between peers
 - [x] send screen config to server on connect
+- [x] config file for common settings
 - [ ] restart peer discovery on connection lost
 - [ ] handle case where multiple servers are spun up on the same network
 - [ ] allow multiple setups to runn independently on the same network (currently all instances will join the same cluster)
 - [ ] create ui for arranging screens
-- [ ] config file for common settings
 - [ ] clean up my shitty code
 - [ ] write logs to file by default with option to print
 

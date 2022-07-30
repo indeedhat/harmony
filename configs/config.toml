@@ -1,0 +1,24 @@
+[app]
+# how often will the transition zones be polled to see if we should swap focus
+transition_poll_ms = 100
+
+# multiple alt presses will force all clients to release their focus and
+# unlock divice exclusive access
+[escape_sequence]
+key_count = 3
+time_seconds = 1
+
+# discovery service for finding peers
+[discovery]
+multicast_address = "239.2.3.239:2399"
+# how many times will we look for servers before giving up and starting a new one
+poll_count = 3
+poll_interval_seconds = 2
+
+[server]
+# web server
+port = 4283
+
+# websockets 
+soc_writ_wait_second = 10
+soc_close_grace_second = 10

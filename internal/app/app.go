@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/indeedhat/harmony/internal/common"
-	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/device"
 	"github.com/indeedhat/harmony/internal/events"
 	. "github.com/indeedhat/harmony/internal/logger"
@@ -34,7 +33,7 @@ type Harmony struct {
 	uuid uuid.UUID
 	// transition zones are used to define screen edges that 'transition' to other peers
 	tZones []screens.TransitionZone
-	// cache the times of the last n (config.AltEscapeCount) alt key up events
+	// cache the times of the last n alt key up events
 	// if enough events happen in a specified time frame then all clients peers
 	// will be told to release focus and exclusive access locks on all devices
 	altCache []time.Time
@@ -184,18 +183,18 @@ func (app *Harmony) handleEmergancyRelease(event *events.InputEvent) {
 	}
 
 	// cache last 3 timestamps
-	if len(app.altCache) == config.AltEscapeCount {
-		app.altCache = append(app.altCache[:config.AltEscapeCount-1], time.Now())
+	if len(app.altCache) == app.ctx.Config.EscapeSequence.KeyCount {
+		app.altCache = append(app.altCache[:app.ctx.Config.EscapeSequence.KeyCount-1], time.Now())
 	} else {
 		app.altCache = append(app.altCache, time.Now())
 	}
 
-	if len(app.altCache) != config.AltEscapeCount {
+	if len(app.altCache) != app.ctx.Config.EscapeSequence.KeyCount {
 		return
 	}
 
-	diff := app.altCache[config.AltEscapeCount-1].Sub(app.altCache[0])
-	if diff <= time.Second*config.AltEscapeTimeframe {
+	diff := app.altCache[app.ctx.Config.EscapeSequence.KeyCount-1].Sub(app.altCache[0])
+	if diff <= time.Second*time.Duration(app.ctx.Config.EscapeSequence.TimeframeSeconds) {
 		Log("app", "emergancy release")
 		app.altCache = []time.Time{}
 		app.client.Input <- &events.ReleaseFocus{}
@@ -210,7 +209,7 @@ func (app *Harmony) runServer() {
 	app.serverMode = true
 	go func() {
 		r := router.New(app.ctx, app.uuid, nil)
-		r.Run(fmt.Sprint(":", config.ServerPort))
+		r.Run(fmt.Sprint(":", app.ctx.Config.Server.Port))
 	}()
 
 	// bit dirty but need to make sure the server satrts before connecting as a peer
@@ -240,7 +239,7 @@ func (app *Harmony) startClient(ip string) error {
 func (app *Harmony) watchTransitionZones() {
 	var (
 		lastPos *common.Vector2
-		ticker  = time.NewTicker(time.Millisecond * config.TransitionPollIntervalMs)
+		ticker  = time.NewTicker(time.Millisecond * time.Duration(app.ctx.Config.App.TransitionPollMs))
 	)
 	defer ticker.Stop()
 

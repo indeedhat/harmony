@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
-	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/events"
 	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/indeedhat/harmony/internal/screens"
@@ -27,7 +26,7 @@ type Client struct {
 
 // NewClient harmony client
 func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens.DisplayBounds) (*Client, error) {
-	serverAddress := fmt.Sprintf("%s:%d", ip, config.ServerPort)
+	serverAddress := fmt.Sprintf("%s:%d", ip, ctx.Config.Server.Port)
 	u := url.URL{Scheme: "ws", Host: serverAddress, Path: "/ws"}
 
 	ws, _, err := websocket.DefaultDialer.Dial(u.String(), nil)

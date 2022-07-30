@@ -210,7 +210,7 @@ func ping(ctx *common.Context, ws *websocket.Conn) {
 		select {
 		case <-ticker.C:
 			err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().
-				Add(config.WriteWait))
+				Add(time.Duration(ctx.Config.Server.WsWriteWaitSecond)+time.Second))
 
 			if err != nil && errors.Is(err, websocket.ErrCloseSent) {
 				return

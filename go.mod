@@ -3,7 +3,7 @@ module github.com/indeedhat/harmony
 go 1.18
 
 require (
-	github.com/davecgh/go-spew v1.1.1
+	github.com/BurntSushi/toml v1.2.0
 	github.com/foolin/goview v0.3.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/uuid v1.3.0

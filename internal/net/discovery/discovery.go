@@ -51,7 +51,7 @@ type Service struct {
 // Service is used to handle udp multicast for peer discovery and master negotiations
 func New(ctx *common.Context) (*Service, error) {
 	Log("discovery", "resolving address")
-	addr, err := net.ResolveUDPAddr("udp4", config.MulticastAddress)
+	addr, err := net.ResolveUDPAddr("udp4", ctx.Config.Discovery.MulticastAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve udp address")
 	}
@@ -86,7 +86,7 @@ func (svc *Service) Close() {
 func (svc *Service) discover() {
 	var (
 		pollCount int
-		ticker    = time.NewTicker(time.Duration(config.DiscoveryInterval) * time.Second)
+		ticker    = time.NewTicker(time.Duration(svc.ctx.Config.Discovery.PollIntervalSeconds) * time.Second)
 	)
 	defer ticker.Stop()
 
@@ -101,7 +101,7 @@ func (svc *Service) discover() {
 				return
 			}
 
-			if pollCount >= config.DiscoveryPollCount {
+			if pollCount >= svc.ctx.Config.Discovery.PollCaunt {
 				Log("discovery", "poll limit reached, requesting server start")
 				svc.state = stateServer
 				svc.Server <- Server{}
@@ -153,7 +153,7 @@ func (svc *Service) listen() {
 				continue
 			}
 
-			data, err := serverMsg()
+			data, err := serverMsg(svc.ctx.Config)
 			if err != nil {
 				continue
 			}
@@ -164,11 +164,11 @@ func (svc *Service) listen() {
 	}
 }
 
-func serverMsg() ([]byte, error) {
+func serverMsg(conf *config.Config) ([]byte, error) {
 	return msgpack.Marshal(&message{
 		Type:       serverResponse,
 		ApiVersion: config.ApiVersion,
-		ServerPort: config.ServerPort,
+		ServerPort: uint16(conf.Server.Port),
 	})
 }
 
