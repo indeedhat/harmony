@@ -74,6 +74,8 @@ func NewDeviceManager(ctx *common.Context) (*DeviceManager, error) {
 		go dm.trackEvents(dev)
 	}
 
+	go dm.consumeIncommingEvents()
+
 	return dm, nil
 }
 

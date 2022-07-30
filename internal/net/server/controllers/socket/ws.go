@@ -145,20 +145,25 @@ func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
 
 func (soc *Socket) handleInputEvent(data []byte) {
 	if soc.activeClient == nil {
+		Log("server", "no active client")
 		return
 	}
 
 	var msg events.InputEvent
 	if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
 		log.Print("ws: failed to unmarshal message")
+		return
 	}
 
 	client, ok := soc.clients[*soc.activeClient]
 	if !ok {
+		Log("server", "bad active client")
 		return
 	}
 
-	client.WriteMessage(websocket.BinaryMessage, data)
+	if err := client.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		Log("server", "send failed")
+	}
 }
 
 func (soc *Socket) handleConnect(ws *websocket.Conn, data []byte) *uuid.UUID {

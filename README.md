@@ -16,11 +16,9 @@ This is a work in progress and is in no way functional
 - [ ] clean up my shitty code
 
 ## Known Bugs
-- [ ] input events dont get sent to focused peer for some reason
 - [ ] if peer connects too fast after server startup transition zones are assigend incorrectly
-- [ ] peer disconnect is not handled properly
+- [ ] peer disconnect is not always handled properly
 - [ ] release events are not always sent to all peers
-- [ ] connecting peer sometimes freezes if the server is stopped
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  

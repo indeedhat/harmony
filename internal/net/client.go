@@ -91,9 +91,11 @@ func (cnt *Client) readEventsFromServer() {
 				cnt.ctx.Cancel()
 				return
 			}
+			Logf("client", "read error: %s", err)
 			continue
 		}
 
+		Logf("client", "event recieved: %d", data[0])
 		cnt.Events <- data
 	}
 }
