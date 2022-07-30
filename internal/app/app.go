@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
@@ -72,6 +71,7 @@ func New(ctx *common.Context) (*Harmony, error) {
 
 // Run the application
 func (app *Harmony) Run() error {
+	Logf("app", "uuid: %s", app.uuid)
 	app.discover.Run()
 
 	defer app.ctx.Cancel()
@@ -83,6 +83,8 @@ func (app *Harmony) Run() error {
 	if err := app.handleDiscoveryMessage(server); err != nil {
 		return err
 	}
+
+	go app.watchTransitionZones()
 
 	for {
 		select {
@@ -123,7 +125,6 @@ func (app *Harmony) handleServerEvent(data []byte) {
 				return
 			}
 
-			spew.Dump(displays)
 			desiredPos := common.Vector2{
 				X: displays[0].Position.X + displays[0].Width/2,
 				Y: displays[0].Position.Y + displays[0].Height/2,
@@ -131,10 +132,6 @@ func (app *Harmony) handleServerEvent(data []byte) {
 
 			diff := desiredPos.Sub(*cursorPos)
 			app.dev.MoveCursor(diff)
-
-			spew.Dump(cursorPos)
-			spew.Dump(desiredPos)
-			spew.Dump(diff)
 		}
 
 	case events.MsgTypeFocusRecieved:
@@ -151,6 +148,7 @@ func (app *Harmony) handleServerEvent(data []byte) {
 		Log("app", "handling new transition zones")
 		if event := events.Unmarshal[events.TransitionZoneAssigned](data[2:]); event != nil {
 			Log("app", "recieved new transition zones")
+			Logf("app", "%#v", *event)
 			app.tZones = *event
 		}
 
@@ -235,4 +233,52 @@ func (app *Harmony) startClient(ip string) error {
 
 	app.client = client
 	return nil
+}
+
+func (app *Harmony) watchTransitionZones() {
+	var (
+		lastPos *common.Vector2
+		ticker  = time.NewTicker(time.Millisecond * config.TransitionPollIntervalMs)
+	)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-app.ctx.Done():
+			return
+
+		case <-ticker.C:
+			if app.active || len(app.tZones) == 0 {
+				continue
+			}
+
+			pos, err := app.vdu.CursorPos()
+			if err != nil {
+				continue
+			}
+
+			if lastPos == nil {
+				lastPos = pos
+				continue
+			}
+
+			for _, zone := range app.tZones {
+				if !zone.ShouldTransition(*pos, *lastPos) {
+					continue
+				}
+
+				if err := app.dev.GrabAccess(); err != nil {
+					continue
+				}
+
+				app.active = true
+				app.client.SendMessage(&events.ChangeFocus{
+					UUID: zone.UUID,
+					Pos:  *pos,
+				})
+			}
+
+			lastPos = pos
+		}
+	}
 }

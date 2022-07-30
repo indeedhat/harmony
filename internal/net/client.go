@@ -36,6 +36,7 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens
 	}
 
 	client := Client{
+		uuid:   uuid,
 		ctx:    ctx,
 		ws:     ws,
 		Events: make(chan []byte),

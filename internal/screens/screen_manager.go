@@ -96,11 +96,11 @@ func (mgr *ScreenManager) buildTransitionZones() map[uuid.UUID][]TransitionZone 
 			UUID: peerB.UUID,
 			Bounds: [2]common.Vector2{
 				{
-					X: screenA.Position.X + screenA.Width,
+					X: screenA.Position.X + screenA.Width - 1,
 					Y: screenA.Position.Y,
 				},
 				{
-					X: screenA.Position.X + screenA.Width,
+					X: screenA.Position.X + screenA.Width - 1,
 					Y: screenA.Position.Y + height,
 				},
 			},
@@ -128,11 +128,15 @@ func (mgr *ScreenManager) buildTransitionZones() map[uuid.UUID][]TransitionZone 
 func findRightMostScreen(displays []DisplayBounds) DisplayBounds {
 	var rightMost *DisplayBounds
 
-	for _, display := range displays {
+	for i, display := range displays {
 		if rightMost == nil {
-			rightMost = &display
+			rightMost = &displays[i]
 		} else if display.Position.X+display.Width > rightMost.Position.X+rightMost.Width {
-			rightMost = &display
+			rightMost = &displays[i]
+		} else if display.Position.X+display.Width == rightMost.Position.X+rightMost.Width &&
+			display.Position.Y < rightMost.Position.Y {
+
+			rightMost = &displays[i]
 		}
 	}
 
@@ -142,11 +146,13 @@ func findRightMostScreen(displays []DisplayBounds) DisplayBounds {
 func findLeftMostScreen(displays []DisplayBounds) DisplayBounds {
 	var leftMost *DisplayBounds
 
-	for _, display := range displays {
+	for i, display := range displays {
 		if leftMost == nil {
-			leftMost = &display
+			leftMost = &displays[i]
 		} else if display.Position.X < leftMost.Position.X {
-			leftMost = &display
+			leftMost = &displays[i]
+		} else if display.Position.X == leftMost.Position.X && display.Position.Y < leftMost.Position.Y {
+			leftMost = &displays[i]
 		}
 	}
 

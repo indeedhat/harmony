@@ -125,7 +125,7 @@ func (soc *Socket) handleReleaseFocus() {
 
 func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
 	Log("server", "change focus")
-	if conUUID != soc.activeClient {
+	if conUUID != soc.activeClient && soc.activeClient != nil {
 		return
 	}
 

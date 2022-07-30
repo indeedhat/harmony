@@ -88,6 +88,7 @@ func (svc *Service) discover() {
 		pollCount int
 		ticker    = time.NewTicker(time.Duration(config.DiscoveryInterval) * time.Second)
 	)
+	defer ticker.Stop()
 
 	for {
 		select {

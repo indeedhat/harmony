@@ -23,24 +23,26 @@ type TransitionZone struct {
 }
 
 // ShouldTransition calculates if the peer should transition foucs based on the defined zone
-func (zone *TransitionZone) ShouldTransition(x, y, deltaX, deltaY int) bool {
-	if x < zone.Bounds[0].X || x > zone.Bounds[1].X {
+func (zone *TransitionZone) ShouldTransition(current, previous common.Vector2) bool {
+	if current.X < zone.Bounds[0].X || current.X > zone.Bounds[1].X {
 		return false
 	}
 
-	if y < zone.Bounds[0].Y || y > zone.Bounds[1].Y {
+	if current.Y < zone.Bounds[0].Y || current.Y > zone.Bounds[1].Y {
 		return false
 	}
+
+    delta := current.Sub(previous)
 
 	switch zone.Direction {
 	case Down:
-		return deltaY < 0
+		return delta.Y < 0
 	case Left:
-		return deltaX < 0
+		return delta.X < 0
 	case Right:
-		return deltaX > 0
+		return delta.X > 0
 	case Up:
-		return deltaY > 0
+		return delta.Y > 0
 	default:
 		return false
 	}
