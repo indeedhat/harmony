@@ -16,7 +16,7 @@ const (
 
 type TransitionZone struct {
 	// This wiss be passed between shared between the peers on both side of the TransitionZone
-	ID     uuid.UUID
+	UUID   uuid.UUID
 	Bounds [2]common.Vector2
 	// Direction of travel required to trigger the transition
 	Direction Direction
