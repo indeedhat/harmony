@@ -16,6 +16,7 @@ import (
 )
 
 type Client struct {
+	Input chan events.WsMessage
 	// Events coming from the server
 	Events chan []byte
 
@@ -34,21 +35,20 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens
 		return nil, err
 	}
 
-	client := Client{
+	client := &Client{
 		uuid:   uuid,
 		ctx:    ctx,
 		ws:     ws,
 		Events: make(chan []byte),
-	}
-
-	if err := client.sendConnect(screens); err != nil {
-		client.Close()
-		return nil, err
+		Input:  make(chan events.WsMessage),
 	}
 
 	go client.readEventsFromServer()
+	go client.consumeIncommingMessages()
 
-	return &client, nil
+	client.sendConnect(screens)
+
+	return client, nil
 }
 
 // Close the client
@@ -56,18 +56,7 @@ func (cnt *Client) Close() error {
 	return cnt.ws.Close()
 }
 
-// SendMessage over the websocket connection
-func (cnt *Client) SendMessage(msg events.WsMessage) error {
-	data, err := msg.Marshal()
-	if err != nil {
-		Logf("client", "failed to marshal event: %s", err)
-		return err
-	}
-
-	return cnt.ws.WriteMessage(websocket.BinaryMessage, data)
-}
-
-func (cnt *Client) sendConnect(screens []screens.DisplayBounds) error {
+func (cnt *Client) sendConnect(screens []screens.DisplayBounds) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "Unknown"
@@ -79,7 +68,8 @@ func (cnt *Client) sendConnect(screens []screens.DisplayBounds) error {
 		Displays: screens,
 	}
 
-	return cnt.SendMessage(msg)
+	Log("app", "sending connect")
+	cnt.Input <- msg
 }
 
 // readEventsFromServer and pass the hid events out to the application via the InputEvents chanel
@@ -96,5 +86,27 @@ func (cnt *Client) readEventsFromServer() {
 		}
 
 		cnt.Events <- data
+	}
+}
+
+func (cnt *Client) consumeIncommingMessages() {
+	for {
+		select {
+		case <-cnt.ctx.Done():
+			Log("client", "done")
+			return
+
+		case msg := <-cnt.Input:
+			data, err := msg.Marshal()
+			if err != nil {
+				Logf("client", "failed to marshal event: %s", err)
+				continue
+
+			}
+
+			if err := cnt.ws.WriteMessage(websocket.BinaryMessage, data); err != nil {
+				Logf("client", "ws write failed: %s", err)
+			}
+		}
 	}
 }

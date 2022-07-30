@@ -175,7 +175,7 @@ func (app *Harmony) handleInputEvent(event *events.InputEvent) {
 		return
 	}
 
-	app.client.SendMessage(event)
+	app.client.Input <- event
 }
 
 func (app *Harmony) handleEmergancyRelease(event *events.InputEvent) {
@@ -198,7 +198,7 @@ func (app *Harmony) handleEmergancyRelease(event *events.InputEvent) {
 	if diff <= time.Second*config.AltEscapeTimeframe {
 		Log("app", "emergancy release")
 		app.altCache = []time.Time{}
-		app.client.SendMessage(&events.ReleaseFocus{})
+		app.client.Input <- &events.ReleaseFocus{}
 	}
 }
 
@@ -275,10 +275,10 @@ func (app *Harmony) watchTransitionZones() {
 
 				Log("app", "giving up focus")
 				app.active = true
-				app.client.SendMessage(&events.ChangeFocus{
+				app.client.Input <- &events.ChangeFocus{
 					UUID: zone.UUID,
 					Pos:  *pos,
-				})
+				}
 			}
 
 			lastPos = pos

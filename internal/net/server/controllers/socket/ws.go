@@ -30,7 +30,7 @@ func (soc *Socket) Ws() gin.HandlerFunc {
 		}
 
 		done := make(chan struct{})
-		go soc.readFromSocket(ws, done)
+		go soc.readFromSocket(NewConn(ctx, ws), done)
 		go ping(soc.appCtx, ws)
 
 		<-done
@@ -48,18 +48,18 @@ func (soc *Socket) broadcast(msg events.WsMessage) {
 	}
 
 	for _, ws := range soc.clients {
-		ws.WriteMessage(websocket.BinaryMessage, data)
+		ws.Input <- data
 	}
 }
 
 // readFromSocket and process/forward the messages
-func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
+func (soc *Socket) readFromSocket(con *ConnectionWrapper, done chan struct{}) {
 	defer close(done)
 
-	ws.SetReadLimit(config.MaxMessageSize)
-	ws.SetReadDeadline(time.Now().Add(config.PongWait))
-	ws.SetPongHandler(func(string) error {
-		ws.SetReadDeadline(time.Now().Add(config.PongWait))
+	con.Soc.SetReadLimit(config.MaxMessageSize)
+	con.Soc.SetReadDeadline(time.Now().Add(config.PongWait))
+	con.Soc.SetPongHandler(func(string) error {
+		con.Soc.SetReadDeadline(time.Now().Add(config.PongWait))
 		return nil
 	})
 
@@ -67,24 +67,21 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 	defer soc.handleDisconnect(conUUID)
 
 	for {
-		messageType, data, err := ws.ReadMessage()
+		messageType, data, err := con.Soc.ReadMessage()
 		if err != nil {
 			break
 		}
 
-		if messageType != websocket.BinaryMessage {
-			continue
-		}
+		if messageType != websocket.BinaryMessage ||
+			(conUUID == nil && data[0] != byte(events.MsgTypeConnect)) {
 
-		// only allow connect messages until the uuid is set
-		if conUUID == nil && data[0] != byte(events.MsgTypeConnect) {
 			continue
 		}
 
 		// handle events
 		switch events.MsgType(data[0]) {
 		case events.MsgTypeConnect:
-			conUUID = soc.handleConnect(ws, data)
+			conUUID = soc.handleConnect(con, data)
 
 		case events.MsgTypeInputEvent:
 			soc.handleInputEvent(data)
@@ -101,6 +98,7 @@ func (soc *Socket) readFromSocket(ws *websocket.Conn, done chan struct{}) {
 	}
 }
 
+// handleDisconnect cleans up the peer data on connection close
 func (soc *Socket) handleDisconnect(conUUID *uuid.UUID) {
 	if conUUID == nil {
 		return
@@ -117,12 +115,14 @@ func (soc *Socket) handleDisconnect(conUUID *uuid.UUID) {
 	soc.distributeTransitionZones(zones)
 }
 
+// handleReleaseFocus broadcasts the event out to all clients on force release recieved
 func (soc *Socket) handleReleaseFocus() {
 	Log("server", "release focus")
 	soc.activeClient = nil
 	soc.broadcast(&events.ReleaseFocus{})
 }
 
+// handleChangeFocus lets the appropriate client know it has focus
 func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
 	Log("server", "change focus")
 	var msg events.ChangeFocus
@@ -139,10 +139,11 @@ func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
 	recMessage := events.FocusRecieved{}
 	data, err := recMessage.Marshal()
 	if err == nil {
-		soc.clients[msg.UUID].WriteMessage(websocket.BinaryMessage, data)
+		soc.clients[msg.UUID].Input <- data
 	}
 }
 
+// handleInputEvent forwards thi hid event to the appropriate peer
 func (soc *Socket) handleInputEvent(data []byte) {
 	if soc.activeClient == nil {
 		Log("server", "no active client")
@@ -161,12 +162,11 @@ func (soc *Socket) handleInputEvent(data []byte) {
 		return
 	}
 
-	if err := client.WriteMessage(websocket.BinaryMessage, data); err != nil {
-		Log("server", "send failed")
-	}
+	client.Input <- data
 }
 
-func (soc *Socket) handleConnect(ws *websocket.Conn, data []byte) *uuid.UUID {
+// handleConnect handles a connection event and rebuilds the transition zones
+func (soc *Socket) handleConnect(con *ConnectionWrapper, data []byte) *uuid.UUID {
 	Log("server", "client connect")
 	var msg events.ClientConnect
 
@@ -174,7 +174,7 @@ func (soc *Socket) handleConnect(ws *websocket.Conn, data []byte) *uuid.UUID {
 		return nil
 	}
 
-	soc.clients[msg.UUID] = ws
+	soc.clients[msg.UUID] = con
 
 	zones := soc.screenManager.AddPeer(msg.UUID, msg.Displays)
 	soc.distributeTransitionZones(zones)
@@ -182,7 +182,9 @@ func (soc *Socket) handleConnect(ws *websocket.Conn, data []byte) *uuid.UUID {
 	return &msg.UUID
 }
 
+// distributeTransitionZones to the appropriate peers
 func (soc *Socket) distributeTransitionZones(zones map[uuid.UUID][]screens.TransitionZone) {
+	Log("server", "distribute tzones")
 	// send updated transition zones
 	for id, zones := range zones {
 		con, ok := soc.clients[id]
@@ -193,7 +195,8 @@ func (soc *Socket) distributeTransitionZones(zones map[uuid.UUID][]screens.Trans
 		tzMessage := events.TransitionZoneAssigned(zones)
 		data, err := tzMessage.Marshal()
 		if err == nil {
-			con.WriteMessage(websocket.BinaryMessage, data)
+			Log("server", "sending t zones")
+			con.Input <- data
 		}
 	}
 }

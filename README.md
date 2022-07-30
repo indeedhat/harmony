@@ -24,7 +24,7 @@ it is lacking a lot of functionality and is still a buggy mess
 - [ ] if peer connects too fast after server startup transition zones are assigend incorrectly
 - [ ] peer disconnect is not always handled properly
 - [ ] release events are not always sent to all peers
-- [ ] server sometimes crashes for seemingly no reason
+- [ ] server sometimes crashes for ~seemingly no reason~ concurrent writes
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
