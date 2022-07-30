@@ -104,10 +104,7 @@ func (app *Harmony) handleServerEvent(data []byte) {
 	switch events.MsgType(data[0]) {
 	case events.MsgTypeInputEvent:
 		if event := events.Unmarshal[events.InputEvent](data[2:]); event != nil {
-			Log("app", "forwarding input event")
 			app.dev.Input <- event
-		} else {
-			Log("app", "input unmarshal failed")
 		}
 
 	case events.MsgTypeReleaseFouces:

@@ -95,7 +95,6 @@ func (cnt *Client) readEventsFromServer() {
 			continue
 		}
 
-		Logf("client", "event recieved: %d", data[0])
 		cnt.Events <- data
 	}
 }

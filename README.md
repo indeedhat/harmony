@@ -1,7 +1,10 @@
 # Harmony HID
 Share your input devices between multiple machines
 
-This is a work in progress and is in no way functional
+## Current State
+This is very much a work in progress.  
+Although it is technically in a working state and does allow sharing HID devices between peers (linux x11 only)
+it is lacking a lot of functionality and is still a buggy mess
 
 ## TODO (in no particular order)
 - [x] handle active client switching
@@ -10,6 +13,8 @@ This is a work in progress and is in no way functional
 - [x] show/hide cursor as focus moves between peers
 - [x] send screen config to server on connect
 - [ ] restart peer discovery on connection lost
+- [ ] handle case where multiple servers are spun up on the same network
+- [ ] allow multiple setups to runn independently on the same network (currently all instances will join the same cluster)
 - [ ] add more logging
 - [ ] create ui for arranging screens
 - [ ] config file for common settings
@@ -19,6 +24,7 @@ This is a work in progress and is in no way functional
 - [ ] if peer connects too fast after server startup transition zones are assigend incorrectly
 - [ ] peer disconnect is not always handled properly
 - [ ] release events are not always sent to all peers
+- [ ] server sometimes crashes for seemingly no reason
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
