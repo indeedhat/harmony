@@ -125,10 +125,6 @@ func (soc *Socket) handleReleaseFocus() {
 
 func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
 	Log("server", "change focus")
-	if conUUID != soc.activeClient && soc.activeClient != nil {
-		return
-	}
-
 	var msg events.ChangeFocus
 	if err := msgpack.Unmarshal(data[2:], &msg); err != nil {
 		log.Print("ws: failed to unmarshal message")

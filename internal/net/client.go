@@ -11,14 +11,13 @@ import (
 	"github.com/indeedhat/harmony/internal/common"
 	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/events"
+	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/indeedhat/harmony/internal/screens"
 )
 
 type Client struct {
 	// Events coming from the server
 	Events chan []byte
-	// Input for events to be sent to the server
-	Input chan events.WsMessage
 
 	ctx  *common.Context
 	ws   *websocket.Conn
@@ -40,7 +39,6 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens
 		ctx:    ctx,
 		ws:     ws,
 		Events: make(chan []byte),
-		Input:  make(chan events.WsMessage),
 	}
 
 	if err := client.sendConnect(screens); err != nil {
@@ -48,7 +46,6 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens
 		return nil, err
 	}
 
-	go client.handleIncommingEvents()
 	go client.readEventsFromServer()
 
 	return &client, nil
@@ -63,6 +60,7 @@ func (cnt *Client) Close() error {
 func (cnt *Client) SendMessage(msg events.WsMessage) error {
 	data, err := msg.Marshal()
 	if err != nil {
+		Logf("client", "failed to marshal event: %s", err)
 		return err
 	}
 
@@ -90,28 +88,12 @@ func (cnt *Client) readEventsFromServer() {
 		_, data, err := cnt.ws.ReadMessage()
 		if err != nil {
 			if errors.Is(err, websocket.ErrCloseSent) {
+				cnt.ctx.Cancel()
 				return
 			}
 			continue
 		}
 
 		cnt.Events <- data
-	}
-}
-
-// autoClose the websocket/client when context ends
-func (cnt *Client) handleIncommingEvents() {
-	for {
-		select {
-		case <-cnt.ctx.Done():
-			cnt.Close()
-			return
-
-		case ev := <-cnt.Input:
-			data, err := ev.Marshal()
-			if err == nil {
-				cnt.ws.WriteMessage(websocket.BinaryMessage, data)
-			}
-		}
 	}
 }

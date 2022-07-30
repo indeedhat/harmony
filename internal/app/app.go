@@ -141,8 +141,10 @@ func (app *Harmony) handleServerEvent(data []byte) {
 		}
 
 		Log("app", "focus recieved")
-		app.active = true
-		// TODO: calculate the desired pos
+		app.active = false
+		app.dev.ReleaseAccess()
+
+		// TODO: move mouse to proper place in transition zone
 
 	case events.MsgTypeTrasitionAssigned:
 		Log("app", "handling new transition zones")
@@ -173,7 +175,8 @@ func (app *Harmony) handleInputEvent(event *events.InputEvent) {
 		return
 	}
 
-	app.client.Input <- event
+	Log("app", "sending event to client")
+	app.client.SendMessage(event)
 }
 
 func (app *Harmony) handleEmergancyRelease(event *events.InputEvent) {
@@ -196,7 +199,7 @@ func (app *Harmony) handleEmergancyRelease(event *events.InputEvent) {
 	if diff <= time.Second*config.AltEscapeTimeframe {
 		Log("app", "emergancy release")
 		app.altCache = []time.Time{}
-		app.client.Input <- &events.ReleaseFocus{}
+		app.client.SendMessage(&events.ReleaseFocus{})
 	}
 }
 
@@ -248,7 +251,7 @@ func (app *Harmony) watchTransitionZones() {
 			return
 
 		case <-ticker.C:
-			if app.active || len(app.tZones) == 0 {
+			if len(app.tZones) == 0 {
 				continue
 			}
 
@@ -271,6 +274,7 @@ func (app *Harmony) watchTransitionZones() {
 					continue
 				}
 
+				Log("app", "giving up focus")
 				app.active = true
 				app.client.SendMessage(&events.ChangeFocus{
 					UUID: zone.UUID,

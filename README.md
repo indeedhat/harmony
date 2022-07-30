@@ -7,14 +7,20 @@ This is a work in progress and is in no way functional
 - [x] handle active client switching
 - [x] websocet server needs a total rewrite
 - [x] release all peers on tripple alt
+- [x] show/hide cursor as focus moves between peers
+- [x] send screen config to server on connect
 - [ ] restart peer discovery on connection lost
 - [ ] add more logging
-- [ ] implement transition zones
-- [ ] show/hide cursor as focus moves between peers
-- [ ] create up for arranging screens
-- [ ] clean up my shitty code
+- [ ] create ui for arranging screens
 - [ ] config file for common settings
-- [ ] send screen config to server on connect
+- [ ] clean up my shitty code
+
+## Known Bugs
+- [ ] input events dont get sent to focused peer for some reason
+- [ ] if peer connects too fast after server startup transition zones are assigend incorrectly
+- [ ] peer disconnect is not handled properly
+- [ ] release events are not always sent to all peers
+- [ ] connecting peer sometimes freezes if the server is stopped
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
