@@ -4,7 +4,7 @@ build:
 
 .PHONY: run
 run: build
-	./harmony-server
+	./harmony-hid -v
 
 .PHONY: run-client
 run-client: build

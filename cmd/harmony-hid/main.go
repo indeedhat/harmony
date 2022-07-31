@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/indeedhat/harmony/internal/app"
@@ -13,6 +14,7 @@ import (
 func main() {
 	verbose := flag.Bool("v", false, "print logs to screen rather than log file")
 	flag.Parse()
+	flag.Usage = usage
 
 	if !*verbose {
 		logger.UseConfigFile()
@@ -31,4 +33,17 @@ func main() {
 	}
 
 	log.Print(app.Run())
+}
+
+func usage() {
+	fmt.Print(`Harmony HID
+Share your mouse and keyboard over the network
+
+Usage: 
+    ./harmony-hid
+
+Options:
+`)
+
+	flag.PrintDefaults()
 }

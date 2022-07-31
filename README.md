@@ -3,8 +3,43 @@ Share your input devices between multiple machines
 
 ## Current State
 This is very much a work in progress.  
-Although it is technically in a working state and does allow sharing HID devices between peers (linux x11 only)
-it is lacking a lot of functionality and is still a buggy mess
+
+Harmony is currently in a usable if not user friendly state: see TODO list for details
+
+## Quick start 
+- clone the repository
+```sh
+git clone git@github.com:indeedhat/harmony
+# alternatively
+git clone github.com/indeedhat/harmony
+```
+
+- copy the configs/config.toml file to the root of the repo
+```sh
+cd harmony
+cp configs/config.toml .
+```
+> I recommend that you change the cluster_id from the default but everything else should be fine unless a port conflicts
+
+- build the project
+```sh
+make build
+# alternatively if you dont have make
+CGO_ENABLED=0 go build -o . ./...
+```
+
+- run harmony
+```sh
+./harmony-hid
+```
+> Peer discovery is done automatically so starting up the harmony binary on another machine (so long as it has the 
+> same cluster_id) will automatically connect to the cluster
+> new clients peers will always be set positioned at the right of the previous peers screen
+
+- move your mouse to the far right of your monitor/multi monitor setup to take control of the next peer
+
+Copy the [config file](https://github.com/indeedhat/harmony/blob/master/configs/config.toml) to the directory harmony 
+is installed to
 
 ## TODO (in no particular order)
 - [x] handle active client switching
