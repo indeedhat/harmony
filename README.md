@@ -38,9 +38,6 @@ CGO_ENABLED=0 go build -o . ./...
 
 - move your mouse to the far right of your monitor/multi monitor setup to take control of the next peer
 
-Copy the [config file](https://github.com/indeedhat/harmony/blob/master/configs/config.toml) to the directory harmony 
-is installed to
-
 ## TODO (in no particular order)
 - [x] handle active client switching
 - [x] websocet server needs a total rewrite
