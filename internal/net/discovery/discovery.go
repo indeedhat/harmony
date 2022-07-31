@@ -43,12 +43,20 @@ type Service struct {
 	// When servers are discoverd their details will be sent over this chanel
 	Server chan Server
 
+	// Start time of the discovery process
 	startTime int64
+	// while the disconvery process is running this will track the minimum start time
+	// of an peer it recieves a message from
+	// in the case that a peer has an earlier start time than itself it will not try to start up
+	// a new server
+	minPeerTime int64
+	// group id for the cluster peers
 	clusterId string
-	state     peerState
-	ctx       *common.Context
-	addr      *net.UDPAddr
-	con       *net.UDPConn
+	// current state of the discovery service
+	state peerState
+	ctx   *common.Context
+	addr  *net.UDPAddr
+	con   *net.UDPConn
 }
 
 // New creates a new instance of the Sirvice struct
@@ -61,7 +69,7 @@ func New(ctx *common.Context) (*Service, error) {
 	}
 
 	Log("discovery", "starting listener")
-	conn, err := net.ListenMulticastUDP("udp4", nil, addr)
+	con, err := net.ListenMulticastUDP("udp4", nil, addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to cennect to multicast address: %w", err)
 	}
@@ -72,17 +80,21 @@ func New(ctx *common.Context) (*Service, error) {
 		state:     stateDiscovery,
 		ctx:       ctx,
 		addr:      addr,
-		con:       conn,
+		con:       con,
 	}, nil
 }
 
 // Run the discovery service
-func (svc *Service) Run() {
+// this can also be used to rerun/restart the discovery process at a later time
+func (svc *Service) Run() (err error) {
 	svc.startTime = time.Now().UnixMilli()
+	svc.minPeerTime = 0
 	svc.state = stateDiscovery
 
 	go svc.discover()
 	go svc.listen()
+
+	return
 }
 
 // Close the discovery service
@@ -110,10 +122,17 @@ func (svc *Service) discover() {
 			}
 
 			if pollCount >= svc.ctx.Config.Discovery.PollCaunt {
-				Log("discovery", "poll limit reached, requesting server start")
-				svc.state = stateServer
-				svc.Server <- Server{}
-				return
+				Log("discovery", "poll limit reached")
+				if svc.minPeerTime == 0 || svc.minPeerTime > svc.startTime {
+					Log("discovery", "starting server")
+					svc.state = stateServer
+					svc.Server <- Server{}
+					return
+				}
+
+				Log("discovery", "waiting for peer to start server")
+				pollCount = 0
+				continue
 			}
 
 			pollCount++
@@ -151,8 +170,11 @@ func (svc *Service) listen() {
 				continue
 			}
 
-			Log("discovery", "server found")
 			svc.state = statePeer
+
+			Log("discovery", "server found")
+			// allow enough time for the server to be fully started (in case it is in the process)
+			time.Sleep(3 * time.Second)
 			svc.Server <- Server{
 				IpAddress: addr.IP.String(),
 				Port:      msg.ServerPort,
@@ -161,17 +183,11 @@ func (svc *Service) listen() {
 
 		case queryPeers:
 			if svc.state != stateServer {
-				Log("discovery", "not in server mode")
+				svc.minPeerTime = msg.StartTime
 				continue
 			}
 
 			if msg.ApiVersion != config.ApiVersion || msg.ClusterId != svc.clusterId {
-				Logf("discovery", "api(%d, %d) id(%s, %s)",
-					msg.ApiVersion,
-					config.ApiVersion,
-					msg.ClusterId,
-					svc.clusterId,
-				)
 				continue
 			}
 

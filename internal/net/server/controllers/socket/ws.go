@@ -147,6 +147,8 @@ func (soc *Socket) handleChangeFocus(conUUID *uuid.UUID, data []byte) {
 func (soc *Socket) handleInputEvent(data []byte) {
 	if soc.activeClient == nil {
 		Log("server", "no active client")
+		// something must have gone wrong to get to here, reset the peers active state
+		soc.handleReleaseFocus()
 		return
 	}
 

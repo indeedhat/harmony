@@ -93,6 +93,10 @@ func (app *Harmony) Run() error {
 
 		case <-app.client.Done():
 			Log("app", "restarting discovery process")
+
+			// grace period to ensure that the disconnected server has fully shut down
+			<-time.After(2 * time.Second)
+
 			if err := app.runDiscovery(); err != nil {
 				return err
 			}
@@ -101,6 +105,10 @@ func (app *Harmony) Run() error {
 }
 
 func (app *Harmony) runDiscovery() error {
+	// reset app state
+	app.active = false
+	app.dev.ReleaseAccess()
+
 	app.discover.Run()
 
 	// need to block until we have a client connected

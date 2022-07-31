@@ -16,16 +16,16 @@ it is lacking a lot of functionality and is still a buggy mess
 - [x] write logs to file by default with option to print
 - [x] allow multiple clusters to runn independently on the same network (currently all instances will join the same cluster)
 - [x] restart peer discovery on connection lost
-- [ ] handle case where multiple servers are spun up on the same network
+- [x] handle case where multiple servers are spun up on the same network
 - [ ] create ui for arranging screens
 - [ ] clean up my shitty code
 - [ ] clipboard support
 - [ ] drag and drop files?
+- [ ] windows support
+- [ ] macos support (not sure how im gonna do this as i don't have one)
 
-## Known Bugs
-- [ ] if peer connects too fast after server startup transition zones are assigend incorrectly
-- [ ] peer disconnect is not always handled properly
-- [ ] release events are not always sent to all peers
+## Known bugs
+currently none known
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
