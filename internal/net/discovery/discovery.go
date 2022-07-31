@@ -31,6 +31,7 @@ type message struct {
 	ApiVersion uint8   `msgpack:"v"`
 	ServerPort uint16  `msgpack:"p"`
 	ClusterId  string  `msgpack:"i"`
+	StartTime  int64   `msgpack:"s"`
 }
 
 type Server struct {
@@ -42,6 +43,7 @@ type Service struct {
 	// When servers are discoverd their details will be sent over this chanel
 	Server chan Server
 
+	startTime int64
 	clusterId string
 	state     peerState
 	ctx       *common.Context
@@ -66,6 +68,7 @@ func New(ctx *common.Context) (*Service, error) {
 
 	return &Service{
 		Server:    make(chan Server),
+		startTime: time.Now().UnixMilli(),
 		clusterId: ctx.Config.Discovery.ClusterId,
 		state:     stateDiscovery,
 		ctx:       ctx,
@@ -112,7 +115,7 @@ func (svc *Service) discover() {
 			}
 
 			pollCount++
-			data, err := discoveryMsg(svc.ctx.Config)
+			data, err := svc.discoveryMsg()
 
 			if err != nil {
 				continue
@@ -126,17 +129,20 @@ func (svc *Service) discover() {
 // listen for messages from peers and respond appropriately
 func (svc *Service) listen() {
 	for {
-		buf := make([]byte, 14)
+		buf := make([]byte, 44)
 		_, addr, err := svc.con.ReadFromUDP(buf)
 		if err != nil {
+			Log("discovery", "read failed")
 			continue
 		}
 
 		var msg message
 		if err := msgpack.Unmarshal(buf, &msg); err != nil {
+			Logf("discovery", "unmarshal failed: %s", err)
 			continue
 		}
 
+		Logf("discovery", "handling message: %d", msg.Type)
 		switch msg.Type {
 		case serverResponse:
 			if svc.state != stateDiscovery {
@@ -153,15 +159,23 @@ func (svc *Service) listen() {
 
 		case queryPeers:
 			if svc.state != stateServer {
+				Log("discovery", "not in server mode")
 				continue
 			}
 
 			if msg.ApiVersion != config.ApiVersion || msg.ClusterId != svc.clusterId {
+				Logf("discovery", "api(%d, %d) id(%s, %s)",
+					msg.ApiVersion,
+					config.ApiVersion,
+					msg.ClusterId,
+					svc.clusterId,
+				)
 				continue
 			}
 
-			data, err := serverMsg(svc.ctx.Config)
+			data, err := svc.serverMsg()
 			if err != nil {
+				Logf("discovery", "msg error: %s", err)
 				continue
 			}
 
@@ -171,18 +185,22 @@ func (svc *Service) listen() {
 	}
 }
 
-func serverMsg(conf *config.Config) ([]byte, error) {
+func (svc *Service) serverMsg() ([]byte, error) {
 	return msgpack.Marshal(&message{
+		StartTime:  svc.startTime,
 		Type:       serverResponse,
 		ApiVersion: config.ApiVersion,
-		ServerPort: uint16(conf.Server.Port),
+		ServerPort: uint16(svc.ctx.Config.Server.Port),
+		ClusterId:  svc.ctx.Config.Discovery.ClusterId,
 	})
 }
 
-func discoveryMsg(conf *config.Config) ([]byte, error) {
+func (svc *Service) discoveryMsg() ([]byte, error) {
 	return msgpack.Marshal(&message{
+		StartTime:  svc.startTime,
 		Type:       queryPeers,
 		ApiVersion: config.ApiVersion,
-		ClusterId:  conf.Discovery.ClusterId,
+		ClusterId:  svc.ctx.Config.Discovery.ClusterId,
+		ServerPort: 0,
 	})
 }
