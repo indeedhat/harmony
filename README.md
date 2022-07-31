@@ -13,12 +13,14 @@ it is lacking a lot of functionality and is still a buggy mess
 - [x] show/hide cursor as focus moves between peers
 - [x] send screen config to server on connect
 - [x] config file for common settings
-- [ ] write logs to file by default with option to print
+- [x] write logs to file by default with option to print
+- [x] allow multiple clusters to runn independently on the same network (currently all instances will join the same cluster)
 - [ ] restart peer discovery on connection lost
 - [ ] handle case where multiple servers are spun up on the same network
-- [ ] allow multiple setups to runn independently on the same network (currently all instances will join the same cluster)
 - [ ] create ui for arranging screens
 - [ ] clean up my shitty code
+- [ ] clipboard support
+- [ ] drag and drop files?
 
 ## Known Bugs
 - [ ] if peer connects too fast after server startup transition zones are assigend incorrectly

@@ -22,6 +22,7 @@ type Config struct {
 		MulticastAddress    string `toml:"multicast_address" validate:"required"`
 		PollCaunt           int    `toml:"poll_count" validate:"required,min=1"`
 		PollIntervalSeconds int    `toml:"poll_interval_seconds" validate:"required,min=1"`
+		ClusterId           string `toml:"cluster_id" validate:"required"`
 	} `toml:"discovery"`
 
 	Server struct {

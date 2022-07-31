@@ -30,6 +30,7 @@ type message struct {
 	Type       msgType `msgpack:"t"`
 	ApiVersion uint8   `msgpack:"v"`
 	ServerPort uint16  `msgpack:"p"`
+	ClusterId  string  `msgpack:"i"`
 }
 
 type Server struct {
@@ -41,10 +42,11 @@ type Service struct {
 	// When servers are discoverd their details will be sent over this chanel
 	Server chan Server
 
-	state peerState
-	ctx   *common.Context
-	addr  *net.UDPAddr
-	con   *net.UDPConn
+	clusterId string
+	state     peerState
+	ctx       *common.Context
+	addr      *net.UDPAddr
+	con       *net.UDPConn
 }
 
 // New creates a new instance of the Sirvice struct
@@ -63,11 +65,12 @@ func New(ctx *common.Context) (*Service, error) {
 	}
 
 	return &Service{
-		Server: make(chan Server),
-		state:  stateDiscovery,
-		ctx:    ctx,
-		addr:   addr,
-		con:    conn,
+		Server:    make(chan Server),
+		clusterId: ctx.Config.Discovery.ClusterId,
+		state:     stateDiscovery,
+		ctx:       ctx,
+		addr:      addr,
+		con:       conn,
 	}, nil
 }
 
@@ -109,7 +112,7 @@ func (svc *Service) discover() {
 			}
 
 			pollCount++
-			data, err := discoveryMsg()
+			data, err := discoveryMsg(svc.ctx.Config)
 
 			if err != nil {
 				continue
@@ -153,6 +156,10 @@ func (svc *Service) listen() {
 				continue
 			}
 
+			if msg.ApiVersion != config.ApiVersion || msg.ClusterId != svc.clusterId {
+				continue
+			}
+
 			data, err := serverMsg(svc.ctx.Config)
 			if err != nil {
 				continue
@@ -172,9 +179,10 @@ func serverMsg(conf *config.Config) ([]byte, error) {
 	})
 }
 
-func discoveryMsg() ([]byte, error) {
+func discoveryMsg(conf *config.Config) ([]byte, error) {
 	return msgpack.Marshal(&message{
 		Type:       queryPeers,
 		ApiVersion: config.ApiVersion,
+		ClusterId:  conf.Discovery.ClusterId,
 	})
 }
