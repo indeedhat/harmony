@@ -1,7 +1,6 @@
 package net
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -76,7 +75,7 @@ func (cnt *Client) readEventsFromServer() {
 	for {
 		_, data, err := cnt.ws.ReadMessage()
 		if err != nil {
-			if errors.Is(err, websocket.ErrCloseSent) {
+			if _, ok := err.(*websocket.CloseError); ok {
 				cnt.ctx.Cancel()
 				return
 			}
