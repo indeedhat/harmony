@@ -15,7 +15,7 @@ it is lacking a lot of functionality and is still a buggy mess
 - [x] config file for common settings
 - [x] write logs to file by default with option to print
 - [x] allow multiple clusters to runn independently on the same network (currently all instances will join the same cluster)
-- [ ] restart peer discovery on connection lost
+- [x] restart peer discovery on connection lost
 - [ ] handle case where multiple servers are spun up on the same network
 - [ ] create ui for arranging screens
 - [ ] clean up my shitty code
