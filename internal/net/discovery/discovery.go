@@ -68,7 +68,6 @@ func New(ctx *common.Context) (*Service, error) {
 
 	return &Service{
 		Server:    make(chan Server),
-		startTime: time.Now().UnixMilli(),
 		clusterId: ctx.Config.Discovery.ClusterId,
 		state:     stateDiscovery,
 		ctx:       ctx,
@@ -79,6 +78,9 @@ func New(ctx *common.Context) (*Service, error) {
 
 // Run the discovery service
 func (svc *Service) Run() {
+	svc.startTime = time.Now().UnixMilli()
+	svc.state = stateDiscovery
+
 	go svc.discover()
 	go svc.listen()
 }

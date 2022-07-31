@@ -8,9 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/events"
 	. "github.com/indeedhat/harmony/internal/logger"
 	"github.com/indeedhat/harmony/internal/screens"
+	"golang.org/x/net/context"
 )
 
 type Client struct {
@@ -18,9 +20,11 @@ type Client struct {
 	// Events coming from the server
 	Events chan []byte
 
-	ctx  *common.Context
-	ws   *websocket.Conn
-	uuid uuid.UUID
+	ctx      context.Context
+	ctxClose context.CancelFunc
+	config   *config.Config
+	ws       *websocket.Conn
+	uuid     uuid.UUID
 }
 
 // NewClient harmony client
@@ -33,12 +37,15 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens
 		return nil, err
 	}
 
+	cntx, ctxClose := context.WithCancel(context.Background())
 	client := &Client{
-		uuid:   uuid,
-		ctx:    ctx,
-		ws:     ws,
-		Events: make(chan []byte),
-		Input:  make(chan events.WsMessage),
+		uuid:     uuid,
+		ctx:      cntx,
+		ctxClose: ctxClose,
+		config:   ctx.Config,
+		ws:       ws,
+		Events:   make(chan []byte),
+		Input:    make(chan events.WsMessage),
 	}
 
 	go client.readEventsFromServer()
@@ -51,9 +58,16 @@ func NewClient(ctx *common.Context, uuid uuid.UUID, ip string, screens []screens
 
 // Close the client
 func (cnt *Client) Close() error {
+	cnt.ctxClose()
 	return cnt.ws.Close()
 }
 
+// Done exposes the Done method from the clients context
+func (cnt *Client) Done() <-chan struct{} {
+	return cnt.ctx.Done()
+}
+
+// sendConnect message to the server
 func (cnt *Client) sendConnect(screens []screens.DisplayBounds) {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -76,7 +90,7 @@ func (cnt *Client) readEventsFromServer() {
 		_, data, err := cnt.ws.ReadMessage()
 		if err != nil {
 			if _, ok := err.(*websocket.CloseError); ok {
-				cnt.ctx.Cancel()
+				cnt.Close()
 				return
 			}
 			Logf("client", "read error: %s", err)

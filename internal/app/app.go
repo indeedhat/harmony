@@ -71,15 +71,10 @@ func New(ctx *common.Context) (*Harmony, error) {
 // Run the application
 func (app *Harmony) Run() error {
 	Logf("app", "uuid: %s", app.uuid)
-	app.discover.Run()
-
 	defer app.ctx.Cancel()
 	defer app.discover.Close()
 
-	// need to block until we have a client connected
-	server := <-app.discover.Server
-	Log("app", "handling discovery event")
-	if err := app.handleDiscoveryMessage(server); err != nil {
+	if err := app.runDiscovery(); err != nil {
 		return err
 	}
 
@@ -95,8 +90,28 @@ func (app *Harmony) Run() error {
 
 		case <-app.ctx.Done():
 			return nil
+
+		case <-app.client.Done():
+			Log("app", "restarting discovery process")
+			if err := app.runDiscovery(); err != nil {
+				return err
+			}
 		}
 	}
+}
+
+func (app *Harmony) runDiscovery() error {
+	app.discover.Run()
+
+	// need to block until we have a client connected
+	server := <-app.discover.Server
+
+	Log("app", "handling discovery event")
+	if err := app.handleDiscoveryMessage(server); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (app *Harmony) handleServerEvent(data []byte) {
