@@ -6,13 +6,13 @@ import (
 )
 
 type UI struct {
-	displays []screens.DisplayBounds
+	screenManager *screens.ScreenManager
 }
 
 // New UI controller
-func New(router *gin.Engine, displays []screens.DisplayBounds) *UI {
+func New(router *gin.Engine, screenManager *screens.ScreenManager) *UI {
 	ui := &UI{
-		displays,
+		screenManager: screenManager,
 	}
 
 	ui.routes(router)

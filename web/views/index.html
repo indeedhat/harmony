@@ -1,107 +1,124 @@
 {{ define "content" }}
-    <section id="screens">
-        {{ range .groups }}
-            <section 
-                class="screen-group" style="width:{{ .Width }}px;height:{{ .Height }}px"
-                draggable="true"
-            >
-                {{ range $i, $d := .Displays }}
-                    <article 
-                        class="screen" 
-                        style="width:{{ $d.Width }}px;height:{{ $d.Height }}px;top:{{ $d.Y }}px;left:{{ $d.X }}px"
-                    >
-                        <span class="idx">{{ $i }}</span>
-                    </article>
-                {{ end }}
-            </section>
-        {{ end }}
-    </section>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<section id="screens" x-data="groups">
+    <template x-for="group in groups">
+        <section class="screen-group" 
+            :style="{ 
+                width: `${group.width}px`, 
+                height: `${group.height}px`, 
+                top: `${group.pos.y}px`, 
+                left: `${group.pos.x}px` 
+            }" 
+            draggable="true"
+        >
+            <template x-for="(screen, i) in group.screens">
+            <article class="screen" :style="{ 
+                width: `${screen.width}px`, 
+                height: `${screen.height}px`, 
+                top: `${screen.pos.y}px`, 
+                left: `${screen.pos.x}px` 
+            }">
+                    <span class="idx" x-text="i"></span>
+                </article>
+            </template>
+        </section>
+    </template>
+</section>
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-        }
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
 
-        #screens {
-            /* position: relative; */
-        }
+    #screens {
+        /* position: relative; */
+    }
 
-        #screens .screen-group {
-            position:absolute;
-        }
+    #screens .screen-group {
+        position:absolute;
+        background: gray;
+    }
 
-        #screens .screen-group .screen {
-            position: absolute;
-            border: 4px solid black;
-        }
+    #screens .screen-group .screen {
+        background: white;
+        position: absolute;
+        border: 4px solid black;
+    }
 
-        #screens .screen-group .screen span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 32px;
-            font-weight: bold;
-        }
+    #screens .screen-group .screen span {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 32px;
+        font-weight: bold;
+    }
 
-        .bad-screen {
-            background: rgba(255, 0, 0, 0.5);
-        }
-    </style>
-    <script>
-        let x = 0
-        let y = 0
+    .bad-screen {
+        background: rgba(255, 0, 0, 0.5);
+    }
+</style>
+<script type="module">
+    import Harmony from "/js/harmony.js";
 
-        function onDragStart(e) {
-            console.log("start", e)
-            x = e.clientX
-            y = e.clientY
+    window.addEventListener("alpine:init", function() {
+        Harmony({{ .groups }});
+    });
+</script>
+<script src="//unpkg.com/alpinejs" defer></script>
+<script>
+    let x = 0
+    let y = 0
 
-            this.addEventListener("mousemove", onDragMove)
-            this.addEventListener("mouseup", function() {
-                this.removeEventListener("mousemove", onDragMove);
-            })
-        }
+    function onDragStart(e) {
+        console.log("start", e)
+        x = e.clientX
+        y = e.clientY
 
-        function onDragEnd(e) {
-            console.log("end", e)
-            x = 0
-            y = 0
-        }
+        this.addEventListener("mousemove", onDragMove)
+        this.addEventListener("mouseup", function() {
+            this.removeEventListener("mousemove", onDragMove);
+        })
+    }
 
-        function onDragMove(e) {
-            console.log("move", {x: e.clientX, y: e.clientY, e})
-            let deltaX = x - e.clientX;
-            let deltaY = y - e.clientY;
+    function onDragEnd(e) {
+        console.log("end", e)
+        x = 0
+        y = 0
+    }
 
-            x = e.clientX;
-            y = e.clientY;
+    function onDragMove(e) {
+        console.log("move", {x: e.clientX, y: e.clientY, e})
+        let deltaX = x - e.clientX;
+        let deltaY = y - e.clientY;
 
-            this.style.top = (this.offsetTop - deltaY) + "px"
-            this.style.left = (this.offsetLeft - deltaX) + "px"
-        }
+        x = e.clientX;
+        y = e.clientY;
 
-        let groups = document.querySelectorAll(".screen-group");
-        console.log(groups)
+        this.style.top = (this.offsetTop - deltaY) + "px"
+        this.style.left = (this.offsetLeft - deltaX) + "px"
+    }
 
-        for (let i = 0; i < groups.length; i++) {
-            let group = groups[i];
-            console.log(group, i)
+    let groups = document.querySelectorAll(".screen-group");
+    console.log(groups)
 
-            group.addEventListener("drag", function() {
-                console.log(arguments)
-            });
-            group.addEventListener("mousedown", onDragStart)
-            group.addEventListener("dragenter", function() {
-                this.classList.add(".bad-screen")
-            })
-            group.addEventListener("dragleave", function() {
-                this.classList.remove(".bad-screen")
-            })
-        }
-    </script>
+    for (let i = 0; i < groups.length; i++) {
+        let group = groups[i];
+        console.log(group, i)
+
+        group.addEventListener("drag", function() {
+            console.log(arguments)
+        });
+        group.addEventListener("mousedown", onDragStart)
+        group.addEventListener("dragenter", function() {
+            this.classList.add(".bad-screen")
+        })
+        group.addEventListener("dragleave", function() {
+            this.classList.remove(".bad-screen")
+        })
+    }
+</script>
 {{ end }}

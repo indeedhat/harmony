@@ -53,12 +53,12 @@ type Socket struct {
 }
 
 // New UI controller
-func New(ctx *common.Context, serverUUID uuid.UUID, router *gin.Engine) *Socket {
+func New(ctx *common.Context, serverUUID uuid.UUID, router *gin.Engine, screenManager *screens.ScreenManager) *Socket {
 	socket := &Socket{
 		appCtx:        ctx,
 		clients:       make(map[uuid.UUID]*ConnectionWrapper),
 		serverUUID:    serverUUID,
-		screenManager: screens.NewScreenManager(),
+		screenManager: screenManager,
 	}
 
 	socket.routes(router)

@@ -40,7 +40,7 @@ func (mgr *ScreenManager) AddPeer(id uuid.UUID, displays []DisplayBounds) map[uu
 		Displays: displays,
 	})
 
-	return mgr.buildTransitionZones()
+	return mgr.CalculateTransitionZones()
 }
 
 // RemovePeer from the screen manager
@@ -58,7 +58,7 @@ func (mgr *ScreenManager) RemovePeer(uuid uuid.UUID) map[uuid.UUID][]TransitionZ
 		break
 	}
 
-	return mgr.buildTransitionZones()
+	return mgr.CalculateTransitionZones()
 }
 
 // PeerExists checks if a peer is already being tracked by the manager
@@ -72,7 +72,8 @@ func (mgr *ScreenManager) PeerExists(uuid uuid.UUID) bool {
 	return false
 }
 
-func (mgr *ScreenManager) buildTransitionZones() map[uuid.UUID][]TransitionZone {
+// CalculateTransitionZones between peers
+func (mgr *ScreenManager) CalculateTransitionZones() map[uuid.UUID][]TransitionZone {
 	zones := make(map[uuid.UUID][]TransitionZone)
 
 	for _, peer := range mgr.Peers {
