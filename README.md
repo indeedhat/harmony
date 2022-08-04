@@ -49,6 +49,7 @@ CGO_ENABLED=0 go build -o . ./...
 - [x] allow multiple clusters to runn independently on the same network (currently all instances will join the same cluster)
 - [x] restart peer discovery on connection lost
 - [x] handle case where multiple servers are spun up on the same network
+- [ ] place cursor in proper positon on peer transition
 - [ ] create ui for arranging screens
 - [ ] clean up my shitty code
 - [ ] clipboard support
@@ -57,7 +58,7 @@ CGO_ENABLED=0 go build -o . ./...
 - [ ] macos support (not sure how im gonna do this as i don't have one)
 
 ## Known bugs
-currently none known
+- [ ] cursor reposition doesnt go to the exact center of screen 0 when focus is dropped
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
