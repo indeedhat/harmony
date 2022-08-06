@@ -15,6 +15,7 @@ func (ui *UI) Index() gin.HandlerFunc {
 		Width       int
 		Height      int
 		UUID        uuid.UUID
+		Hostname    string
 		Displays    []screens.DisplayBounds
 		Transitions []screens.TransitionZone
 	}
@@ -33,7 +34,8 @@ func (ui *UI) Index() gin.HandlerFunc {
 
 		for i, peer := range ui.screenManager.Peers {
 			group := DisplayGroup{
-				UUID: peer.UUID,
+				UUID:     peer.UUID,
+				Hostname: peer.Hostname,
 			}
 
 			for _, display := range peer.Displays {

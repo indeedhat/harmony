@@ -1,8 +1,16 @@
+import Vector from '/js/vector.js';
+import ScreenMover from '/js/move.js';
+
 const Harmony = groups => {
     Alpine.data("groups", () => ({
         init() {
             this.reposition();
-            console.log(this.groups);
+            this.mover = new ScreenMover(this);
+        },
+
+        handleDragStart(e, group) {
+            console.log({ e, group })
+            this.mover.handleDragStart(e, group);
         },
 
         reposition() {
@@ -66,6 +74,7 @@ const Harmony = groups => {
         },
 
         groups: format(groups),
+        mover: null
     }));
 
 };
@@ -93,11 +102,12 @@ const group = data => {
 
     return {
         id: data.UUID,
+        name: data.Hostname,
         pos: new Vector(),
         width: data.Width,
         height: data.Height,
         transitions,
-        screens,
+        screens
     };
 };
 
@@ -115,36 +125,5 @@ const transitionZone = data => ({
     )
 })
 
-
-class Vector {
-    static zero = new Vector();
-
-    static fromGo(goVector) {
-        return new Vector(goVector.X, goVector.Y);
-    }
-
-    static topLeft(a, b) {
-        console.log({a, ad : a.distanceFrom(Vector.zero), b, bd: b.distanceFrom(Vector.zero)});
-        if (a.distanceFrom(Vector.zero) < b.distanceFrom(Vector.zero)) {
-            return a;
-        }
-
-        return b;
-}
-
-    constructor(x = 0, y = 0) {
-        this.x = x;
-        this.y = y;
-    }
-
-    distanceFrom(pos) {
-        return Math.sqrt(
-            Math.abs(
-                (this.x - pos.x) ** 2 
-                + (this.y - pos.y) ** 2
-            )
-        );
-    }
-}
 
 export default Harmony;

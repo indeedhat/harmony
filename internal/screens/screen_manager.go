@@ -13,6 +13,7 @@ import (
 
 type Peer struct {
 	UUID     uuid.UUID
+	Hostname string
 	Displays []DisplayBounds
 }
 
@@ -31,12 +32,13 @@ func NewScreenManager() *ScreenManager {
 
 // AddPeer to the screen manager
 // this will regenerate all the transition zones between all peers
-func (mgr *ScreenManager) AddPeer(id uuid.UUID, displays []DisplayBounds) map[uuid.UUID][]TransitionZone {
+func (mgr *ScreenManager) AddPeer(id uuid.UUID, displays []DisplayBounds, hostname string) map[uuid.UUID][]TransitionZone {
 	mgr.mux.Lock()
 	defer mgr.mux.Unlock()
 
 	mgr.Peers = append(mgr.Peers, Peer{
 		UUID:     id,
+		Hostname: hostname,
 		Displays: displays,
 	})
 

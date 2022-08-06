@@ -178,7 +178,7 @@ func (soc *Socket) handleConnect(con *ConnectionWrapper, data []byte) *uuid.UUID
 
 	soc.clients[msg.UUID] = con
 
-	zones := soc.screenManager.AddPeer(msg.UUID, msg.Displays)
+	zones := soc.screenManager.AddPeer(msg.UUID, msg.Displays, msg.Hostname)
 	soc.distributeTransitionZones(zones)
 
 	return &msg.UUID

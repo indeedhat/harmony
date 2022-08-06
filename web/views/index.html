@@ -9,6 +9,7 @@
                 left: `${group.pos.x}px` 
             }" 
             draggable="true"
+            @mouseDown.prevent.stop="handleDragStart($event, group)"
         >
             <template x-for="(screen, i) in group.screens">
             <article class="screen" :style="{ 
@@ -17,7 +18,7 @@
                 top: `${screen.pos.y}px`, 
                 left: `${screen.pos.x}px` 
             }">
-                    <span class="idx" x-html='`${group.id}<br>${i}`'></span>
+                    <span class="idx" x-html='`${group.name}<br>${i}`'></span>
                 </article>
             </template>
         </section>
@@ -55,6 +56,7 @@
         transform: translate(-50%, -50%);
         font-size: 32px;
         font-weight: bold;
+        text-align: center;
     }
 
     .bad-screen {
