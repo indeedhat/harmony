@@ -86,13 +86,12 @@
 
                     let subPoints = getPoints(elems[i]);
 
-                    for (let x = 0; x < 4; x++) {
-                        for (let y = 0; y < 4; y++) {
-                            let dst = distance(elPoints[x], subPoints[y]);
-                            if (dst < closestDistance) {
-                                closestDistance = dst;
-                                closestEl = elems[i];
-                            }
+                    for (let x = 0; x < 4; x++)
+                    for (let y = 0; y < 4; y++) {
+                        let dst = distance(elPoints[x], subPoints[y]);
+                        if (dst < closestDistance) {
+                            closestDistance = dst;
+                            closestEl = elems[i];
                         }
                     }
                 }
@@ -124,6 +123,7 @@
                 for (let i = 0; i < options.length; i++) {
                     let [ e1e, e2e ] = options[i];
                     let dst = distance(e1Points[e1e], e2Points[e2e]);
+
                     console.log({ e1e, e2e, dst })
                     if (dst < closestDistance) {
                         closestDistance = dst

@@ -6,8 +6,8 @@ class Vector {
     }
 
     static topLeft(a, b) {
-        console.log({a, ad : a.distanceFrom(Vector.zero), b, bd: b.distanceFrom(Vector.zero)});
-        if (a.distanceFrom(Vector.zero) < b.distanceFrom(Vector.zero)) {
+        console.log({a, ad : a.distance(Vector.zero), b, bd: b.distance(Vector.zero)});
+        if (a.distance(Vector.zero) < b.distance(Vector.zero)) {
             return a;
         }
 
@@ -19,7 +19,7 @@ class Vector {
         this.y = y;
     }
 
-    distanceFrom(pos) {
+    distance(pos) {
         return Math.sqrt(
             Math.abs(
                 (this.x - pos.x) ** 2 

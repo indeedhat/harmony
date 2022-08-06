@@ -9,7 +9,6 @@ const Harmony = groups => {
         },
 
         handleDragStart(e, group) {
-            console.log({ e, group })
             this.mover.handleDragStart(e, group);
         },
 
@@ -80,50 +79,27 @@ const Harmony = groups => {
 };
 
 const format = data => {
-    let groups = [];
-
-    for (let i = 0; i < data.length; i++) {
-        groups.push(group(data[i]));
-    }
-
-    return groups;
-};
-
-const group = data => {
-    let screens = [];
-    for (let i = 0; i < data.Displays.length; i++) {
-        screens.push(screen(data.Displays[i]));
-    }
-
-    let transitions = [];
-    for (let i = 0; i < (data.Transitions || []).length; i++) {
-        transitions.push(transitionZone(data.Transitions[i]));
-    }
-
-    return {
-        id: data.UUID,
-        name: data.Hostname,
+    return data.map(group => ({
+        id: group.UUID,
+        time: +new Date(), // thest to force update
+        name: group.Hostname,
         pos: new Vector(),
-        width: data.Width,
-        height: data.Height,
-        transitions,
-        screens
-    };
+        width: group.Width,
+        height: group.Height,
+        screens: group.Displays.map(screen => ({
+            groupId: group.UUID,
+            pos: new Vector(screen.Position.X, screen.Position.Y),
+            width: screen.Width,
+            height: screen.Height
+        })),
+        transitions: group.Transitions.map(transition => ({
+            id: transition.UUID,
+            pos: Vector.topLeft(
+                Vector.fromGo(transition.Bounds[0]), 
+                Vector.fromGo(transition.Bounds[1])
+            )
+        }))
+    }))
 };
-
-const screen = data => ({
-    pos: new Vector(data.Position.X, data.Position.Y),
-    width: data.Width,
-    height: data.Height
-});
-
-const transitionZone = data => ({
-    id: data.UUID,
-    pos: Vector.topLeft(
-        Vector.fromGo(data.Bounds[0]), 
-        Vector.fromGo(data.Bounds[1])
-    )
-})
-
 
 export default Harmony;
