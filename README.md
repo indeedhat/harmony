@@ -49,8 +49,12 @@ CGO_ENABLED=0 go build -o . ./...
 - [x] allow multiple clusters to runn independently on the same network (currently all instances will join the same cluster)
 - [x] restart peer discovery on connection lost
 - [x] handle case where multiple servers are spun up on the same network
-- [ ] place cursor in proper positon on peer transition
 - [ ] create ui for arranging screens
+    - [x] arrange screens
+    - [x] check for touching edges
+    - [x] check overlap
+    - [ ] generate new transition zones
+- [ ] place cursor in proper positon on peer transition
 - [ ] clean up my shitty code
 - [ ] clipboard support
 - [ ] drag and drop files?
@@ -60,6 +64,7 @@ CGO_ENABLED=0 go build -o . ./...
 
 ## Known bugs
 - [ ] cursor reposition doesnt go to the exact center of screen 0 when focus is dropped
+- [ ] doesnt find all transition zones when single group touches multiple screens
 
 ## Credits
 [github.com/foolin/goview](github.com/foolin/goview)  
@@ -69,3 +74,4 @@ CGO_ENABLED=0 go build -o . ./...
 [github.com/jezek/xgb](github.com/jezek/xgb)  
 [github.com/jezek/xgbutil](github.com/jezek/xgbutil)  
 [github.com/vmihailenco/msgpack/v5](github.com/vmihailenco/msgpack/v5)  
+[github.com/alpinejs/alpine](github.com/alpinejs/alpine)

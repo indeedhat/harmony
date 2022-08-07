@@ -1,25 +1,6 @@
-import Vector, { Vector4 } from '/js/vector.js';
+import Vector, { Vector4, Directions } from '/js/vector.js';
 
 const SNAP_THRESHOLD = 20;
-
-const Directions = {
-    UP: 0,
-    RIGHT: 1,
-    DOWN: 2,
-    LEFT: 3,
-
-    fromRect(dir) {
-        if (dir == "y") {
-            return Directions.UP;
-        } else if (dir == "w") {
-            return Directions.RIGHT;
-        } else if (dir == "z") {
-            return Directions.DOWN;
-        }
-
-        return Directions.LEFT;
-    }
-};
 
 class ScreenMover {
     constructor(alpine) {

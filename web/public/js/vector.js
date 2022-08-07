@@ -91,7 +91,28 @@ class Vector4 {
     }
 }
 
+const Directions = {
+    UP: 0,
+    RIGHT: 1,
+    DOWN: 2,
+    LEFT: 3,
+
+    fromRect(dir) {
+        if (dir == "y") {
+            return Directions.UP;
+        } else if (dir == "w") {
+            return Directions.RIGHT;
+        } else if (dir == "z") {
+            return Directions.DOWN;
+        }
+
+        return Directions.LEFT;
+    }
+};
+
+
 export default Vector;
 export {
-    Vector4
+    Vector4,
+    Directions
 };
