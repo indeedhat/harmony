@@ -56,7 +56,7 @@ func (mgr *ScreenManager) RemovePeer(uuid uuid.UUID) map[uuid.UUID][]TransitionZ
 			continue
 		}
 
-		mgr.Peers = append(mgr.Peers[:i], mgr.Peers[i:]...)
+		mgr.Peers = append(mgr.Peers[:i], mgr.Peers[i+1:]...)
 		break
 	}
 
