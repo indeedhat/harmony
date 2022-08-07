@@ -2,10 +2,10 @@ import Vector from '/js/vector.js';
 import ScreenMover from '/js/move.js';
 
 const Harmony = groups => {
-    Alpine.data("groups", () => ({
+    Alpine.data("harmony", () => ({
         init() {
-            this.reposition();
             this.mover = new ScreenMover(this);
+            this.reposition();
         },
 
         handleDragStart(e, group) {
@@ -43,6 +43,8 @@ const Harmony = groups => {
                     }
                 }
             }
+
+            this.mover.centerCanvas();
         },
 
         findMatchingTransition(self, neighbour) {
@@ -72,6 +74,10 @@ const Harmony = groups => {
             return null;
         },
 
+        canvas: {
+            width: 0,
+            height: 0
+        },
         groups: format(groups),
         mover: null
     }));
@@ -86,13 +92,13 @@ const format = data => {
         pos: new Vector(),
         width: group.Width,
         height: group.Height,
-        screens: group.Displays.map(screen => ({
+        screens: (group.Displays || []).map(screen => ({
             groupId: group.UUID,
             pos: new Vector(screen.Position.X, screen.Position.Y),
             width: screen.Width,
             height: screen.Height
         })),
-        transitions: group.Transitions.map(transition => ({
+        transitions: (group.Transitions || []).map(transition => ({
             id: transition.UUID,
             pos: Vector.topLeft(
                 Vector.fromGo(transition.Bounds[0]), 

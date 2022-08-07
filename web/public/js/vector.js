@@ -6,13 +6,19 @@ class Vector {
     }
 
     static topLeft(a, b) {
-        console.log({a, ad : a.distance(Vector.zero), b, bd: b.distance(Vector.zero)});
         if (a.distance(Vector.zero) < b.distance(Vector.zero)) {
             return a;
         }
 
         return b;
-}
+    }
+
+    static overlapRect(a, b) {
+        return a.left.x <= b.right.x
+            &&  b.left.x <= a.right.x
+            && a.top.y <= b.top.y
+            && b.top.y <= a.top.y;
+    }
 
     constructor(x = 0, y = 0) {
         this.x = x;
@@ -43,4 +49,49 @@ class Vector {
     }
 }
 
+class Vector4 {
+    constructor(x, y, w, z) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.z = z;
+    }
+
+    static fromRect(x, y, width, height) {
+        return new Vector4(x, y, x + width, y + height)
+    }
+
+    overlapRect(r2) {
+        // no horizontal overlap
+        if (this.x >= r2.w || r2.x >= this.w) {
+            return false;
+        }
+
+        // no vertical overlap
+        console.log(this.y, r2.z, r2.y, this.z)
+        if (this.y >= r2.z || r2.y >= this.z) {
+            return false;
+        }
+
+        return true;
+    }
+
+    touchesRect(r2) {
+        // no horizontal overlap
+        if (this.x > r2.w || r2.x > this.w) {
+            return false;
+        }
+
+        // no vertical overlap
+        if (this.y > r2.z || r2.y > this.z) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
 export default Vector;
+export {
+    Vector4
+};

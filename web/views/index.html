@@ -1,5 +1,5 @@
 {{ define "content" }}
-<section id="screens" x-data="groups">
+<section id="screens" x-data="harmony" :style="{ width: `${canvas.width}px`, height: `${canvas.height}px` }">
     <template x-for="group in groups">
         <section class="screen-group" 
             :style="{ 
@@ -18,7 +18,7 @@
                 top: `${screen.pos.y}px`, 
                 left: `${screen.pos.x}px` 
             }">
-                    <span class="idx" x-html='`${group.name}<br>${i}`'></span>
+                    <span class="idx" x-html='`${group.id}<br />${group.name}<br>${i}`'></span>
                 </article>
             </template>
         </section>
@@ -35,7 +35,10 @@
     }
 
     #screens {
-        /* position: relative; */
+        position: absolute; 
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
     #screens .screen-group {
