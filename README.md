@@ -55,6 +55,7 @@ CGO_ENABLED=0 go build -o . ./...
 - [ ] clipboard support
 - [ ] drag and drop files?
 - [ ] windows support
+- [ ] wayland support
 - [ ] macos support (not sure how im gonna do this as i don't have one)
 
 ## Known bugs

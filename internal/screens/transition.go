@@ -8,10 +8,10 @@ import (
 type Direction uint8
 
 const (
-	Down Direction = iota
-	Left
+	Up Direction = iota
 	Right
-	Up
+	Down
+	Left
 )
 
 type TransitionZone struct {
@@ -32,7 +32,7 @@ func (zone *TransitionZone) ShouldTransition(current, previous common.Vector2) b
 		return false
 	}
 
-    delta := current.Sub(previous)
+	delta := current.Sub(previous)
 
 	switch zone.Direction {
 	case Down:
