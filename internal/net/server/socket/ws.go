@@ -2,7 +2,6 @@ package socket
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -101,9 +100,7 @@ func (soc *Socket) readFromSocket(con *ConnectionWrapper, done chan struct{}) {
 
 // handleDisconnect cleans up the peer data on connection close
 func (soc *Socket) handleDisconnect(conUUID *uuid.UUID) {
-	fmt.Println("handleDisconnect")
 	if conUUID == nil {
-		fmt.Println("conUUID == nil")
 		return
 	}
 
@@ -114,9 +111,7 @@ func (soc *Socket) handleDisconnect(conUUID *uuid.UUID) {
 		soc.broadcast(&events.ReleaseFocus{})
 	}
 
-	fmt.Println("removing peer")
 	zones := soc.screenManager.RemovePeer(*conUUID)
-	fmt.Println(zones)
 	soc.distributeTransitionZones(zones)
 }
 

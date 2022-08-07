@@ -76,22 +76,25 @@ class ScreenMover {
      */
     findTouchingScreens(group) {
         let overlapping = [];
-        let groupEdges = edges(group, { pos: Vector.zero });
 
-        for (let g = 0; g < this.alpine.groups.length; g++) {
-            if (this.alpine.groups[g].id == group.id) {
-                continue;
-            }
+        for (let i = 0; i < group.screens.length; i++) {
+            let groupEdges = edges(group.screens[i], group);
 
-            for (let s = 0; s < this.alpine.groups[g].screens.length; s++) {
-                let screen = this.alpine.groups[g].screens[s];
-                let screenEdges = edges(screen, this.alpine.groups[g]);
+            for (let g = 0; g < this.alpine.groups.length; g++) {
+                if (this.alpine.groups[g].id == group.id) {
+                    continue;
+                }
 
-                if (groupEdges.touchesRect(screenEdges)) {
-                    overlapping.push({ 
-                        screen, 
-                        edge: this._findClosestEdge(group, screen, this.alpine.groups[g])
-                    });
+                for (let s = 0; s < this.alpine.groups[g].screens.length; s++) {
+                    let screen = this.alpine.groups[g].screens[s];
+                    let screenEdges = edges(screen, this.alpine.groups[g]);
+
+                    if (groupEdges.touchesRect(screenEdges)) {
+                        overlapping.push({ 
+                            screen, 
+                            edge: this._findClosestEdge(group.screens[i], screen, this.alpine.groups[g])
+                        });
+                    }
                 }
             }
         }
@@ -172,7 +175,6 @@ class ScreenMover {
 
         this.target.pos = this.target.pos.subtract(delta);
 
-        // TODO: this needs to work off overlapping edges rather than just using closestScreen.closestEdge
         this._snap(this.target);
     }
 
