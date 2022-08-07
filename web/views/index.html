@@ -18,7 +18,7 @@
                 top: `${screen.pos.y}px`, 
                 left: `${screen.pos.x}px` 
             }">
-                    <span class="idx" x-html='`${group.id}<br />${group.name}<br>${i}`'></span>
+                    <span class="idx" x-html='`${group.name}<br>${i}`'></span>
                 </article>
             </template>
         </section>
@@ -73,57 +73,5 @@
         Harmony({{ .groups }});
     });
 </script>
-<script src="//unpkg.com/alpinejs" defer></script>
-<script>
-    let x = 0
-    let y = 0
-
-    function onDragStart(e) {
-        console.log("start", e)
-        x = e.clientX
-        y = e.clientY
-
-        this.addEventListener("mousemove", onDragMove)
-        this.addEventListener("mouseup", function() {
-            this.removeEventListener("mousemove", onDragMove);
-        })
-    }
-
-    function onDragEnd(e) {
-        console.log("end", e)
-        x = 0
-        y = 0
-    }
-
-    function onDragMove(e) {
-        console.log("move", {x: e.clientX, y: e.clientY, e})
-        let deltaX = x - e.clientX;
-        let deltaY = y - e.clientY;
-
-        x = e.clientX;
-        y = e.clientY;
-
-        this.style.top = (this.offsetTop - deltaY) + "px"
-        this.style.left = (this.offsetLeft - deltaX) + "px"
-    }
-
-    let groups = document.querySelectorAll(".screen-group");
-    console.log(groups)
-
-    for (let i = 0; i < groups.length; i++) {
-        let group = groups[i];
-        console.log(group, i)
-
-        group.addEventListener("drag", function() {
-            console.log(arguments)
-        });
-        group.addEventListener("mousedown", onDragStart)
-        group.addEventListener("dragenter", function() {
-            this.classList.add(".bad-screen")
-        })
-        group.addEventListener("dragleave", function() {
-            this.classList.remove(".bad-screen")
-        })
-    }
-</script>
+<script src="/js/alpine.min.js" defer></script>
 {{ end }}

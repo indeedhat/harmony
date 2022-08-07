@@ -86,6 +86,15 @@ class ScreenMover {
         return overlapping;
     }
 
+    calculateTransitionZones() {
+        for (let g = 0; g < this.groups.length; g++) {
+            if (this.findOverlappingScreens(group).length) {
+                console.log(`group ${this.groups[g].hostname} has overlap`);
+                return;
+            }
+        }
+    }
+
     _handleDragEnd(e) {
         e.preventDefault();
         document.onmousemove = null;
