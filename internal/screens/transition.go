@@ -5,43 +5,41 @@ import (
 	"github.com/indeedhat/harmony/internal/common"
 )
 
-type Direction uint8
-
-const (
-	Up Direction = iota
-	Right
-	Down
-	Left
-)
+type TransitionTarget struct {
+	// This wiss be passed between shared between the peers on both side of the TransitionZone
+	UUID uuid.UUID
+	// Bounds of the transition zone on the target machine
+	Bounds common.Vector4
+}
 
 type TransitionZone struct {
-	// This wiss be passed between shared between the peers on both side of the TransitionZone
-	UUID   uuid.UUID
-	Bounds [2]common.Vector2
+	Target TransitionTarget
+	// Bounds of the TransitionZone
+	Bounds common.Vector4
 	// Direction of travel required to trigger the transition
-	Direction Direction
+	Direction common.Direction
 }
 
 // ShouldTransition calculates if the peer should transition foucs based on the defined zone
 func (zone *TransitionZone) ShouldTransition(current, previous common.Vector2) bool {
-	if current.X < zone.Bounds[0].X || current.X > zone.Bounds[1].X {
+	if current.X < zone.Bounds.X || current.X > zone.Bounds.W {
 		return false
 	}
 
-	if current.Y < zone.Bounds[0].Y || current.Y > zone.Bounds[1].Y {
+	if current.Y < zone.Bounds.Y || current.Y > zone.Bounds.Z {
 		return false
 	}
 
 	delta := current.Sub(previous)
 
 	switch zone.Direction {
-	case Down:
+	case common.DirectionDown:
 		return delta.Y < 0
-	case Left:
+	case common.DirectionLeft:
 		return delta.X < 0
-	case Right:
+	case common.DirectionRight:
 		return delta.X > 0
-	case Up:
+	case common.DirectionUp:
 		return delta.Y > 0
 	default:
 		return false

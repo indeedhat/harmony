@@ -14,7 +14,13 @@ import (
 type Peer struct {
 	UUID     uuid.UUID
 	Hostname string
+	Position common.Vector2
 	Displays []DisplayBounds
+}
+
+// AbsolutePosition gets the absolute position of the display in the virtual environment
+func (peer *Peer) AbsolutePosition(bounds DisplayBounds) common.Vector2 {
+	return peer.Position.Add(bounds.Position)
 }
 
 type ScreenManager struct {
@@ -36,11 +42,13 @@ func (mgr *ScreenManager) AddPeer(id uuid.UUID, displays []DisplayBounds, hostna
 	mgr.mux.Lock()
 	defer mgr.mux.Unlock()
 
-	mgr.Peers = append(mgr.Peers, Peer{
-		UUID:     id,
-		Hostname: hostname,
-		Displays: displays,
-	})
+	if !mgr.PeerExists(id) {
+		mgr.Peers = append(mgr.Peers, Peer{
+			UUID:     id,
+			Hostname: hostname,
+			Displays: displays,
+		})
+	}
 
 	return mgr.CalculateTransitionZones()
 }
@@ -92,36 +100,44 @@ func (mgr *ScreenManager) CalculateTransitionZones() map[uuid.UUID][]TransitionZ
 			peerB   = mgr.Peers[i+1]
 			screenA = findRightMostScreen(peerA.Displays)
 			screenB = findLeftMostScreen(peerB.Displays)
-			height  = min(screenA.Height, screenB.Height)
+			height  = common.Min(screenA.Height, screenB.Height)
 		)
 
 		zones[peerA.UUID] = append(zones[peerA.UUID], TransitionZone{
-			UUID: peerB.UUID,
-			Bounds: [2]common.Vector2{
-				{
-					X: screenA.Position.X + screenA.Width - 1,
-					Y: screenA.Position.Y,
-				},
-				{
-					X: screenA.Position.X + screenA.Width - 1,
-					Y: screenA.Position.Y + height,
-				},
-			},
-			Direction: Right,
-		})
-		zones[peerB.UUID] = append(zones[peerB.UUID], TransitionZone{
-			UUID: peerA.UUID,
-			Bounds: [2]common.Vector2{
-				{
+			Target: TransitionTarget{
+				UUID: peerB.UUID,
+				Bounds: common.Vector4{
 					X: screenB.Position.X,
 					Y: screenB.Position.Y,
-				},
-				{
-					X: screenB.Position.X,
-					Y: screenB.Position.Y + height,
+					W: screenB.Position.X,
+					Z: screenB.Position.Y + height,
 				},
 			},
-			Direction: Left,
+			Bounds: common.Vector4{
+				X: screenA.Position.X + screenA.Width - 1,
+				Y: screenA.Position.Y,
+				W: screenA.Position.X + screenA.Width - 1,
+				Z: screenA.Position.Y + height,
+			},
+			Direction: common.DirectionRight,
+		})
+		zones[peerB.UUID] = append(zones[peerB.UUID], TransitionZone{
+			Target: TransitionTarget{
+				UUID: peerA.UUID,
+				Bounds: common.Vector4{
+					X: screenA.Position.X + screenA.Width - 1,
+					Y: screenA.Position.Y,
+					W: screenA.Position.X + screenA.Width - 1,
+					Z: screenA.Position.Y + height,
+				},
+			},
+			Bounds: common.Vector4{
+				X: screenB.Position.X,
+				Y: screenB.Position.Y,
+				W: screenB.Position.X,
+				Z: screenB.Position.Y + height,
+			},
+			Direction: common.DirectionLeft,
 		})
 	}
 
@@ -160,12 +176,4 @@ func findLeftMostScreen(displays []DisplayBounds) DisplayBounds {
 	}
 
 	return *leftMost
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-
-	return b
 }

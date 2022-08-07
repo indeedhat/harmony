@@ -99,11 +99,8 @@ const format = data => {
             height: screen.Height
         })),
         transitions: (group.Transitions || []).map(transition => ({
-            id: transition.UUID,
-            pos: Vector.topLeft(
-                Vector.fromGo(transition.Bounds[0]), 
-                Vector.fromGo(transition.Bounds[1])
-            )
+            id: transition.Target.UUID,
+            pos: new Vector2(transition.Bounds.X, transition.Bounds.Y)
         }))
     }))
 };

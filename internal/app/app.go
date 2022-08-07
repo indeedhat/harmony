@@ -298,7 +298,7 @@ func (app *Harmony) watchTransitionZones() {
 				Log("app", "giving up focus")
 				app.active = true
 				app.client.Input <- &events.ChangeFocus{
-					UUID: zone.UUID,
+					UUID: zone.Target.UUID,
 					Pos:  *pos,
 				}
 			}

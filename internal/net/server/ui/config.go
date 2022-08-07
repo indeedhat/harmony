@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/indeedhat/harmony/internal/common"
+	"github.com/indeedhat/harmony/internal/config"
 	"github.com/indeedhat/harmony/internal/screens"
 )
 
@@ -55,20 +56,17 @@ func (ui *UI) Index() gin.HandlerFunc {
 			}
 
 			for _, zone := range zones[peer.UUID] {
-				group.Transitions = append(group.Transitions, screens.TransitionZone{
-					UUID:      zone.UUID,
-					Direction: zone.Direction,
-					Bounds: [2]common.Vector2{
-						{
-							X: zone.Bounds[0].X / 4,
-							Y: zone.Bounds[0].Y / 4,
-						},
-						{
-							X: zone.Bounds[1].X / 4,
-							Y: zone.Bounds[1].Y / 4,
-						},
-					},
-				})
+				zone.Bounds.X = zone.Bounds.X / config.UIScaleFactor
+				zone.Bounds.Y = zone.Bounds.X / config.UIScaleFactor
+				zone.Bounds.W = zone.Bounds.W / config.UIScaleFactor
+				zone.Bounds.Z = zone.Bounds.Z / config.UIScaleFactor
+
+				zone.Target.Bounds.X = zone.Target.Bounds.X / config.UIScaleFactor
+				zone.Target.Bounds.Y = zone.Target.Bounds.X / config.UIScaleFactor
+				zone.Target.Bounds.W = zone.Target.Bounds.W / config.UIScaleFactor
+				zone.Target.Bounds.Z = zone.Target.Bounds.Z / config.UIScaleFactor
+
+				group.Transitions = append(group.Transitions, zone)
 			}
 
 			groups[i] = group
